@@ -1,0 +1,1 @@
+import React from "react";export default function Topbar({title,onCreate}){return <header className="topbar"><div>Workspace　/　<b>{title}</b></div><div><button className="quiet">◎ Help</button><button className="btn-primary" onClick={onCreate}>＋ Issue credential</button></div></header>}
