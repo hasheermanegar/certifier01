@@ -36,13 +36,44 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
   const [uploads,U]=useState([]);
   const [backgroundImage,setBackgroundImage]=useState("");
   const [msg,M]=useState("");
+  const [previewImage,setPreviewImage]=useState("");
   const [zoom,Z]=useState(65);
+  const [workspaceSize,WS]=useState({width:800,height:600});
+  const workspaceRef=useRef(null);
   const canvas=useRef(null);
+  useEffect(()=>{
+    const el=workspaceRef.current;
+    if(!el)return;
+    const observer=new ResizeObserver(entries=>{
+      const rect=entries[0].contentRect;
+      WS({width:rect.width,height:rect.height});
+    });
+    observer.observe(el);
+    return ()=>observer.disconnect();
+  },[]);
+
   const cur=d.elements.find(e=>e.id===selected);
   const patch=(i,v)=>D(x=>({...x,elements:x.elements.map(e=>e.id===i?{...e,...v}:e)}));
   const add=(type,text,extra={})=>{
-    const e={id:id(),type,text,x:100,y:150,width:type==="qr"?120:500,height:type==="qr"?120:60,fontSize:24,color:"#26334d",align:"center",...extra};
-    D(x=>({...x,elements:[...x.elements,e]}));S(e.id);
+    const qr=type==="qr";
+    const image=type==="image";
+    const width=Math.min(d.width*0.8,qr?140:image?260:Math.min(500,d.width*0.8));
+    const height=qr?width:image?160:60;
+    const e={
+      id:id(),
+      type,
+      text,
+      x:Math.max(0,(d.width-width)/2),
+      y:Math.max(0,(d.height-height)/2),
+      width,
+      height,
+      fontSize:24,
+      color:"#26334d",
+      align:"center",
+      ...extra
+    };
+    D(x=>({...x,elements:[...x.elements,e]}));
+    S(e.id);
   };
   const del=i=>{D(x=>({...x,elements:x.elements.filter(e=>e.id!==i)}));S(null)};
 
@@ -72,15 +103,68 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
     U(x=>[src,...x]);add("image","Image",{src,width:260,height:160});
   };
   const change=v=>{
-    if(v==="landscape"||v==="portrait")D(x=>({...x,orientation:v,width:v==="landscape"?1120:790,height:v==="landscape"?790:1120}));
-    else D(x=>({...x,background:v}));
+    if(v==="landscape"||v==="portrait"){
+      D(x=>{
+        const newW=v==="landscape"?1120:790;
+        const newH=v==="landscape"?790:1120;
+        const oldW=x.width||1120;
+        const oldH=x.height||790;
+
+        if(x.orientation===v && oldW===newW && oldH===newH)return x;
+
+        const sx=newW/oldW;
+        const sy=newH/oldH;
+
+        return {
+          ...x,
+          orientation:v,
+          width:newW,
+          height:newH,
+          elements:x.elements.map(e=>({
+            ...e,
+            x:Math.round((e.x||0)*sx),
+            y:Math.round((e.y||0)*sy),
+            width:Math.max(1,Math.round((e.width||1)*sx)),
+            height:Math.max(1,Math.round((e.height||1)*sy))
+          }))
+        };
+      });
+    }else{
+      D(x=>({...x,background:v}));
+    }
   };
   const applyTemplate=(p,orientation)=>{
     const selectedOrientation=p.orientation || orientation || "landscape";
     const portrait=selectedOrientation==="portrait";
-    D(x=>({...x,name:p.name || x.name,orientation:selectedOrientation,width:p.width || (portrait?790:1120),height:p.height || (portrait?1120:790),background:p.background || p.bg || "#ffffff",backgroundImage:p.backgroundImage || "",elements:Array.isArray(p.elements)?p.elements:templateElements(p,portrait)}));
+    setBackgroundImage(p.backgroundImage || "");
+    D(x=>({...x,name:p.name || x.name,orientation:selectedOrientation,width:p.width || (portrait?790:1120),height:p.height || (portrait?1120:790),background:p.background || p.bg || "#ffffff",elements:Array.isArray(p.elements)?p.elements:templateElements(p,portrait)}));
     S(null);M((p.name || "Certificate")+" template applied");setTimeout(()=>M(""),1800);
   };
+
+  const previewCertificate=async()=>{
+    try {
+      M("Preparing preview...");
+      const imageCanvas=await html2canvas(canvas.current,{
+        scale:2,
+        backgroundColor:"#ffffff",
+        useCORS:true,
+        logging:false,
+        onclone:clonedDocument=>{
+          clonedDocument.querySelectorAll(".react-resizable-handle").forEach(el=>el.remove());
+          clonedDocument.querySelectorAll(".react-draggable").forEach(el=>{
+            el.style.border="none";
+            el.style.outline="none";
+          });
+        }
+      });
+      setPreviewImage(imageCanvas.toDataURL("image/png"));
+      M("");
+    } catch(error) {
+      console.error("Preview generation error:",error);
+      M("Preview failed to generate");
+    }
+  };
+
   const exportPDF=async()=>{
     try{
       M("Preparing PDF…");
@@ -100,9 +184,9 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
     :tool==="Layers"?<LayersPanel elements={d.elements} selected={selected} onSelect={S} onDelete={del} onMove={move}/>
     :<ElementsPanel onAdd={add}/>;
 
-  const scale=Math.min(1,Math.max(.2,zoom/100),850/d.width,650/d.height);
+  const scale=Math.max(0.01,Math.min(zoom/100,(workspaceSize.width-60)/d.width,(workspaceSize.height-60)/d.height));
 
-  return <div className="designer-page cp-designer">
+  return <div className="designer-page cp-designer" data-orientation={d.orientation}>
     <header className="cp-designer-top">
       <div className="cp-top-left">
         <button className="cp-back" onClick={onClose}>← <span>Back</span></button>
@@ -113,14 +197,14 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
         <button className="cp-top-button" onClick={()=>Z(Math.max(25,zoom-10))}>−</button>
         <span className="cp-zoom-label">{zoom}%</span>
         <button className="cp-top-button" onClick={()=>Z(Math.min(100,zoom+10))}>＋</button>
-        <button className="cp-top-button cp-preview-button" onClick={()=>window.print()}>◉ Preview</button>
+        <button className="cp-top-button cp-preview-button" onClick={previewCertificate}>◉ Preview</button>
         <button className="btn-secondary" onClick={exportPDF}>↓ Export PDF</button>
         <button className="btn-primary" onClick={()=>{onSave(d);M("Design saved");setTimeout(()=>M(""),1800)}}>Save design</button>
       </div>
     </header>
 
     <div className="cp-editor-body">
-      <ToolRail active={tool} onSelect={T}/>
+      <ToolRail active={tool} onSelect={nextTool=>{T(nextTool);S(null)}}/>
       <aside className="cp-editor-panel">{panel}</aside>
       <main className="cp-workspace">
         <div className="cp-workspace-toolbar">
@@ -128,11 +212,62 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
           <div><button onClick={()=>change("landscape")} className={d.orientation==="landscape"?"chosen":""}>Landscape</button><button onClick={()=>change("portrait")} className={d.orientation==="portrait"?"chosen":""}>Portrait</button></div>
         </div>
         <div className="cp-canvas-workarea">
+          {cur && (cur.type==="text" || cur.type==="attribute") && (
+            <div className="cp-inline-toolbar" onMouseDown={e=>e.stopPropagation()}>
+              <select aria-label="Font family" value={cur.fontFamily||"Inter"} onChange={e=>patch(cur.id,{fontFamily:e.target.value})}>
+                <option value="Inter">Inter</option>
+                <option value="Arial">Arial</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Courier New">Courier New</option>
+              </select>
+              <input aria-label="Font size" type="number" min="6" max="150" value={cur.fontSize||24} onChange={e=>patch(cur.id,{fontSize:Math.max(6,Math.min(150,+e.target.value||6))})}/>
+              <input aria-label="Text color" type="color" value={cur.color||"#26334d"} onChange={e=>patch(cur.id,{color:e.target.value})}/>
+              <button type="button" className={cur.bold?"active":""} title="Bold" onClick={()=>patch(cur.id,{bold:!cur.bold})}><b>B</b></button>
+              <button type="button" className={cur.italic?"active":""} title="Italic" onClick={()=>patch(cur.id,{italic:!cur.italic})}><i>I</i></button>
+              <button type="button" className={cur.underline?"active":""} title="Underline" onClick={()=>patch(cur.id,{underline:!cur.underline})}><u>U</u></button>
+              <select aria-label="Text alignment" value={cur.align||"center"} onChange={e=>patch(cur.id,{align:e.target.value})}>
+                <option value="left">Left</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+              </select>
+            </div>
+          )}
           <div className="cp-canvas-caption"><span>Page 1</span><span>Click an element to edit it · Drag to reposition</span></div>
-          <div className="cp-canvas-scroll">
+          <div className="cp-canvas-scroll" ref={workspaceRef} onMouseDown={e=>{if(!e.target.closest(".react-rnd"))S(null)}}>
             <div className="cp-canvas-frame" style={{width:d.width*scale,height:d.height*scale}}>
               <div ref={canvas} className="certificate-canvas cp-certificate-canvas" style={{width:d.width,height:d.height,background:d.background,backgroundImage:backgroundImage?`url("${backgroundImage}")`:undefined,backgroundSize:"100% 100%",backgroundPosition:"center",backgroundRepeat:"no-repeat",transform:"scale("+scale+")",transformOrigin:"top left"}}>
-                {d.elements.map(e=><Rnd key={e.id} bounds="parent" size={{width:e.width,height:e.height}} position={{x:e.x,y:e.y}} onDragStop={(ev,p)=>patch(e.id,{x:p.x,y:p.y})} onResizeStop={(ev,dir,ref,delta,p)=>patch(e.id,{width:parseInt(ref.style.width),height:parseInt(ref.style.height),x:p.x,y:p.y})} onMouseDown={()=>S(e.id)} style={{border:selected===e.id?"1px dashed #315eea":"1px solid transparent",zIndex:selected===e.id?3:1}}>
+                {d.elements.map(e=><Rnd key={e.id} bounds="parent" scale={scale} enableResizing={selected===e.id ? {
+      top:true,
+      right:true,
+      bottom:true,
+      left:true,
+      topRight:true,
+      bottomRight:true,
+      bottomLeft:true,
+      topLeft:true
+    } : false}
+    resizeHandleStyles={{
+      top:{width:10,height:10,background:"#ffffff",border:"2px solid #315eea",borderRadius:"50%",top:-5},
+      right:{width:10,height:10,background:"#ffffff",border:"2px solid #315eea",borderRadius:"50%",right:-5},
+      bottom:{width:10,height:10,background:"#ffffff",border:"2px solid #315eea",borderRadius:"50%",bottom:-5},
+      left:{width:10,height:10,background:"#ffffff",border:"2px solid #315eea",borderRadius:"50%",left:-5},
+      topRight:{width:10,height:10,background:"#ffffff",border:"2px solid #315eea",borderRadius:"50%",right:-5,top:-5},
+      bottomRight:{width:10,height:10,background:"#ffffff",border:"2px solid #315eea",borderRadius:"50%",right:-5,bottom:-5},
+      bottomLeft:{width:10,height:10,background:"#ffffff",border:"2px solid #315eea",borderRadius:"50%",left:-5,bottom:-5},
+      topLeft:{width:10,height:10,background:"#ffffff",border:"2px solid #315eea",borderRadius:"50%",left:-5,top:-5}
+    }}
+    resizeHandleClasses={{
+      top:"cp-resize-handle",
+      right:"cp-resize-handle",
+      bottom:"cp-resize-handle",
+      left:"cp-resize-handle",
+      topRight:"cp-resize-handle",
+      bottomRight:"cp-resize-handle",
+      bottomLeft:"cp-resize-handle",
+      topLeft:"cp-resize-handle"
+    }} size={{width:e.width,height:e.height}} position={{x:e.x,y:e.y}} onDragStop={(ev,p)=>{const moved=Math.abs(p.x-e.x)+Math.abs(p.y-e.y);if(moved>4)patch(e.id,{x:p.x,y:p.y});}} onResizeStop={(ev,dir,ref,delta,p)=>patch(e.id,{width:parseInt(ref.style.width),height:parseInt(ref.style.height),x:p.x,y:p.y})} onMouseDown={()=>S(e.id)} style={{border:selected===e.id?"1px dashed #315eea":"1px solid transparent",zIndex:selected===e.id?3:1}}>
                   <div onClick={()=>S(e.id)} style={{height:"100%",width:"100%",display:"flex",alignItems:"center",justifyContent:e.align==="left"?"flex-start":e.align==="right"?"flex-end":"center",fontSize:e.fontSize,fontFamily:e.fontFamily||"Inter",fontWeight:e.bold?700:400,fontStyle:e.italic?"italic":"normal",textDecoration:e.underline?"underline":"none",letterSpacing:(e.letterSpacing||0)+"px",lineHeight:e.lineHeight||1.2,textTransform:e.textTransform||"none",color:e.color,textAlign:e.align,overflow:"hidden",whiteSpace:"pre-wrap",padding:3}}>
                     {e.type==="qr"?<QRCodeSVG value={e.qrMode==="automatic"?"https://certifypro.in/verify/PREVIEW-CREDENTIAL":(e.text||"https://example.com")} size={Math.max(40,Math.min(e.width,e.height)-5)}/>:e.type==="image"?<img src={e.src} alt="" style={{width:"100%",height:"100%",objectFit:"contain"}}/>:e.type==="shape"?<div style={{width:"100%",height:"100%",boxSizing:"border-box",background:e.fill||"transparent",border:e.shape==="border"?"8px double "+(e.stroke||"#c5a45c"):e.shape==="corner"?"4px solid "+(e.stroke||"#c5a45c"):e.strokeWidth?e.strokeWidth+"px "+(e.shape==="dashed"?"dashed":"solid")+" "+(e.stroke||"#315eea"):"none",borderRadius:e.shape==="circle"?"50%":e.shape==="rounded"?"14px":0,clipPath:e.shape==="triangle"?"polygon(50% 0, 0 100%, 100% 100%)":e.shape==="star"?"polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)":e.shape==="diamond"?"polygon(50% 0,100% 50%,50% 100%,0 50%)":e.shape==="corner"?"polygon(0 0,100% 0,100% 15%,15% 15%,15% 100%,0 100%)":"none",opacity:e.opacity??1}}/>:e.text}
                   </div>
@@ -293,6 +428,22 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
         </section>
       </aside>
     </div>
+    {previewImage && (
+      <div className="certify-preview-overlay" onClick={()=>setPreviewImage("")}>
+        <div className="certify-preview-modal" onClick={e=>e.stopPropagation()}>
+          <div className="certify-preview-toolbar">
+            <strong>Certificate Preview</strong>
+            <div className="certify-preview-buttons">
+              <button type="button" onClick={()=>window.print()}>Print / Save PDF</button>
+              <button type="button" className="certify-preview-close" onClick={()=>setPreviewImage("")}>Close Preview ✕</button>
+            </div>
+          </div>
+          <div className="certify-preview-stage">
+            <img src={previewImage} alt="Certificate preview" />
+          </div>
+        </div>
+      </div>
+    )}
     {msg&&<div className="toast">{msg}</div>}
   </div>;
 }

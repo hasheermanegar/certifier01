@@ -1,3 +1,4 @@
+import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import React, { useRef, useState } from "react";
 
 const templates = [
@@ -85,8 +86,8 @@ export default function TemplatesPanel({ design, onChange, onApply }) {
   const importTemplate = async file => {
     if (!file) return;
     try {
-      if (file.size > 2 * 1024 * 1024) {
-        setNotice("Please choose a file smaller than 2 MB.");
+      if (file.size > 25 * 1024 * 1024) {
+        setNotice("Please choose a file smaller than 25 MB.");
         return;
       }
 
@@ -96,7 +97,7 @@ export default function TemplatesPanel({ design, onChange, onApply }) {
 
       if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
         const pdfjs = await import("pdfjs-dist");
-        pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
+        pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
         const pdf = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
         const page = await pdf.getPage(1);
         const viewport = page.getViewport({ scale: 1.5 });
@@ -105,7 +106,7 @@ export default function TemplatesPanel({ design, onChange, onApply }) {
         canvas.height = Math.round(viewport.height);
         await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
         dataUrl = canvas.toDataURL("image/jpeg", 0.82);
-        await pdf.destroy();
+
       } else if (["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
         dataUrl = await new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -122,12 +123,26 @@ export default function TemplatesPanel({ design, onChange, onApply }) {
       image.src = dataUrl;
       await new Promise((resolve, reject) => {
         image.onload = resolve;
-        image.onerror = reject;
+        image.onerror = () => reject(new Error("Image decoding failed"));
       });
 
-      const portrait = image.naturalHeight > image.naturalWidth;
-      width = portrait ? 790 : 1120;
-      height = portrait ? 1120 : 790;
+      // Resize and compress large uploads before saving to browser storage.
+      const maxDimension = 1800;
+      const resizeRatio = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+      const optimizedCanvas = document.createElement("canvas");
+      optimizedCanvas.width = Math.max(1, Math.round(image.naturalWidth * resizeRatio));
+      optimizedCanvas.height = Math.max(1, Math.round(image.naturalHeight * resizeRatio));
+      const ctx = optimizedCanvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas rendering is unavailable");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, optimizedCanvas.width, optimizedCanvas.height);
+      ctx.drawImage(image, 0, 0, optimizedCanvas.width, optimizedCanvas.height);
+      dataUrl = optimizedCanvas.toDataURL("image/jpeg", 0.72);
+
+      // Preserve the uploaded template's exact aspect ratio and dimensions.
+      const portrait = optimizedCanvas.height > optimizedCanvas.width;
+      width = optimizedCanvas.width;
+      height = optimizedCanvas.height;
 
       const item = {
         id: crypto.randomUUID(),
@@ -155,7 +170,7 @@ export default function TemplatesPanel({ design, onChange, onApply }) {
       setNotice("Template uploaded. Select it under My Templates.");
     } catch (error) {
       console.error(error);
-      setNotice("Could not import this file. Please try another file.");
+      setNotice("Import failed: " + (error?.message || "unsupported or damaged file"));
     }
   };
 

@@ -3537,3 +3537,347 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     align-items:flex-start;
   }
 }
+
+/* CertifyPro: clean certificate-only printing */
+@media print {
+  @page {
+    size: auto;
+    margin: 0;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    overflow: visible !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .cp-certificate-canvas,
+  .cp-certificate-canvas * {
+    visibility: visible !important;
+  }
+
+  .cp-designer,
+  .cp-editor-body,
+  .cp-workspace,
+  .cp-canvas-workarea,
+  .cp-canvas-scroll,
+  .cp-canvas-frame {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .cp-certificate-canvas {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    transform: none !important;
+    transform-origin: top left !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .cp-designer-top,
+  .cp-editor-panel,
+  .tool-rail,
+  .cp-workspace-toolbar,
+  .cp-canvas-caption,
+  .cp-canvas-footer,
+  .cp-properties,
+  button {
+    display: none !important;
+  }
+}
+
+
+/* CertifyPro Studio - inline text editor toolbar */
+.cp-inline-toolbar {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px;
+  margin: 8px 12px;
+  background: #ffffff;
+  border: 1px solid #dfe5ef;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(25, 40, 70, .08);
+}
+.cp-inline-toolbar select,
+.cp-inline-toolbar input[type="number"] {
+  height: 32px;
+  min-width: 64px;
+  border: 1px solid #e1e6ee;
+  border-radius: 6px;
+  padding: 0 7px;
+  background: #fff;
+  color: #34425a;
+  font-size: 12px;
+}
+.cp-inline-toolbar select:first-child {
+  min-width: 115px;
+}
+.cp-inline-toolbar input[type="color"] {
+  width: 35px;
+  height: 32px;
+  padding: 3px;
+  border: 1px solid #e1e6ee;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+}
+.cp-inline-toolbar button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e1e6ee;
+  border-radius: 6px;
+  background: #fff;
+  color: #34425a;
+  cursor: pointer;
+}
+.cp-inline-toolbar button:hover,
+.cp-inline-toolbar button.active {
+  background: #edf2ff;
+  color: #315eea;
+  border-color: #c7d5ff;
+}
+@media(max-width:700px) {
+  .cp-inline-toolbar {
+    margin: 6px;
+    gap: 4px;
+  }
+}
+
+/* Certificate designer: selection and resize handles */
+.cp-certificate-canvas .react-rnd {
+  touch-action: none;
+}
+
+.cp-certificate-canvas .react-rnd > div {
+  cursor: move;
+}
+
+.cp-certificate-canvas .react-resizable-handle {
+  width: 10px !important;
+  height: 10px !important;
+  background: #ffffff !important;
+  border: 2px solid #315eea !important;
+  border-radius: 50% !important;
+  box-sizing: border-box !important;
+  opacity: 1 !important;
+  z-index: 20 !important;
+}
+
+.cp-certificate-canvas .react-resizable-handle-n,
+.cp-certificate-canvas .react-resizable-handle-s {
+  left: 50% !important;
+  margin-left: -5px !important;
+}
+
+.cp-certificate-canvas .react-resizable-handle-e,
+.cp-certificate-canvas .react-resizable-handle-w {
+  top: 50% !important;
+  margin-top: -5px !important;
+}
+
+.cp-certificate-canvas .react-resizable-handle-nw,
+.cp-certificate-canvas .react-resizable-handle-ne,
+.cp-certificate-canvas .react-resizable-handle-sw,
+.cp-certificate-canvas .react-resizable-handle-se {
+  margin: -5px !important;
+}
+
+.cp-certificate-canvas .react-resizable-handle-n { top: -5px !important; }
+.cp-certificate-canvas .react-resizable-handle-s { bottom: -5px !important; }
+.cp-certificate-canvas .react-resizable-handle-e { right: -5px !important; }
+.cp-certificate-canvas .react-resizable-handle-w { left: -5px !important; }
+
+.cp-certificate-canvas .react-resizable-handle-nw { top: -5px !important; left: -5px !important; }
+.cp-certificate-canvas .react-resizable-handle-ne { top: -5px !important; right: -5px !important; }
+.cp-certificate-canvas .react-resizable-handle-sw { bottom: -5px !important; left: -5px !important; }
+.cp-certificate-canvas .react-resizable-handle-se { bottom: -5px !important; right: -5px !important; }
+
+/* Explicit visible resize handles */
+.cp-certificate-canvas .cp-resize-handle {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 9999 !important;
+  position: absolute !important;
+  box-sizing: border-box !important;
+}
+
+
+/* CERTIFYPRO: CLEAN CERTIFICATE-ONLY PRINT PREVIEW */
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
+@page landscape {
+  size: A4 landscape;
+  margin: 0;
+}
+
+@media print {
+  html, body, #root {
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: #fff !important;
+  }
+
+  .cp-designer[data-orientation="landscape"] {
+    page: landscape;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .cp-certificate-canvas,
+  .cp-certificate-canvas * {
+    visibility: visible !important;
+  }
+
+  .cp-certificate-canvas {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    margin: 0 !important;
+    transform: none !important;
+    transform-origin: top left !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: hidden !important;
+    background-size: 100% 100% !important;
+    z-index: 999999 !important;
+  }
+
+  .cp-certificate-canvas .react-draggable,
+  .cp-certificate-canvas .react-resizable {
+    transform: none !important;
+  }
+
+  .cp-certificate-canvas [class*="resize-handle"] {
+    display: none !important;
+  }
+}
+
+/* CertifyPro in-page certificate preview */
+.cp-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(13, 20, 35, .78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.cp-preview-modal {
+  width: min(1200px, 96vw);
+  height: min(94vh, 1000px);
+  display: flex;
+  flex-direction: column;
+  background: #f0f2f6;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 25px 80px rgba(0,0,0,.3);
+}
+.cp-preview-modal-toolbar {
+  flex: none;
+  min-height: 60px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: white;
+  border-bottom: 1px solid #e6eaf0;
+}
+.cp-preview-modal-toolbar strong {
+  font-size: 14px;
+  color: #26334d;
+}
+.cp-preview-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.cp-preview-modal-actions button {
+  border: 0;
+  border-radius: 7px;
+  padding: 10px 14px;
+  background: #315eea;
+  color: white;
+  cursor: pointer;
+}
+.cp-preview-modal-actions .cp-preview-close {
+  background: #64748b;
+}
+.cp-preview-modal-stage {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.cp-preview-modal-stage img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  background: white;
+  box-shadow: 0 8px 35px rgba(0,0,0,.15);
+}
+@media(max-width:600px) {
+  .cp-preview-overlay { padding: 5px; }
+  .cp-preview-modal { width: 100%; height: 98vh; }
+  .cp-preview-modal-toolbar { padding: 10px; }
+  .cp-preview-modal-actions { gap: 5px; }
+  .cp-preview-modal-actions button { padding: 9px 10px; font-size: 11px; }
+  .cp-preview-modal-stage { padding: 10px; }
+}
+
+/* In-page certificate preview overlay */
+.certify-preview-overlay{position:fixed;inset:0;z-index:99999;background:rgba(13,20,35,.78);display:flex;align-items:center;justify-content:center;padding:20px}
+.certify-preview-modal{width:min(1200px,96vw);height:min(94vh,1000px);display:flex;flex-direction:column;background:#eef1f5;border-radius:12px;overflow:hidden;box-shadow:0 25px 80px rgba(0,0,0,.3)}
+.certify-preview-toolbar{flex:none;min-height:60px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff;border-bottom:1px solid #e6eaf0}
+.certify-preview-toolbar strong{font-size:14px;color:#26334d}
+.certify-preview-buttons{display:flex;gap:9px}
+.certify-preview-buttons button{border:0;border-radius:7px;padding:10px 14px;background:#315eea;color:#fff;cursor:pointer}
+.certify-preview-buttons .certify-preview-close{background:#64748b}
+.certify-preview-stage{flex:1;min-height:0;overflow:auto;display:flex;align-items:center;justify-content:center;padding:24px}
+.certify-preview-stage img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;background:#fff;box-shadow:0 8px 35px rgba(0,0,0,.15)}
+@media(max-width:600px){.certify-preview-overlay{padding:5px}.certify-preview-modal{width:100%;height:98vh}.certify-preview-toolbar{padding:10px}.certify-preview-buttons{gap:5px}.certify-preview-buttons button{padding:9px 10px;font-size:11px}.certify-preview-stage{padding:10px}}
+@media print{
+  @page{margin:0}
+  body *{visibility:hidden!important}
+  .certify-preview-overlay,.certify-preview-overlay *{visibility:visible!important}
+  .certify-preview-overlay{position:absolute!important;inset:0!important;padding:0!important;background:#fff!important;display:block!important}
+  .certify-preview-modal{width:100%!important;height:auto!important;overflow:visible!important;border-radius:0!important;box-shadow:none!important;background:#fff!important}
+  .certify-preview-toolbar{display:none!important}
+  .certify-preview-stage{display:block!important;padding:0!important;overflow:visible!important}
+  .certify-preview-stage img{width:100%!important;height:auto!important;max-width:none!important;max-height:none!important;box-shadow:none!important;object-fit:contain!important}
+}
