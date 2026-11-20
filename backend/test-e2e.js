@@ -255,7 +255,11 @@ async function main() {
     "Public verification rejects revoked certificate",
     revokedVerification.response.status === 200 &&
     revokedVerification.body.verified === false &&
-    revokedVerification.body.status === "revoked"
+    revokedVerification.body.status === "revoked" &&
+    revokedVerification.body.certificate?.recipientName === "Original Test Recipient" &&
+    revokedVerification.body.certificate?.certificateTitle === "Backend Testing Certificate" &&
+    revokedVerification.body.certificate?.organization === "Snapshot Test Organization" &&
+    !!revokedVerification.body.certificate?.issuedAt
   );
 
   const revokedPdf = await api(

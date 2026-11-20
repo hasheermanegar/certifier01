@@ -184,13 +184,37 @@ const verifyCertificate = async (req, res) => {
       });
     }
 
+    const recipientName =
+      certificate.recipientSnapshot?.name ||
+      certificate.recipient?.name;
+
+    const certificateTitle =
+      certificate.templateSnapshot?.title ||
+      certificate.template?.title;
+
+    const organization =
+      certificate.templateSnapshot?.organization ||
+      certificate.recipientSnapshot?.organization ||
+      certificate.template?.organization ||
+      certificate.recipient?.organization ||
+      "";
+
+    const certificateDetails = {
+      certificateId: certificate.certificateId,
+      recipientName: recipientName || "Not available",
+      certificateTitle: certificateTitle || "Not available",
+      organization,
+      issuedAt: certificate.issuedAt,
+      status: certificate.status
+    };
+
     if (certificate.status === "revoked") {
       return res.json({
         success: true,
         verified: false,
         message: "This certificate has been revoked",
-        certificateId: certificate.certificateId,
-        status: certificate.status
+        status: certificate.status,
+        certificate: certificateDetails
       });
     }
 
@@ -209,21 +233,6 @@ const verifyCertificate = async (req, res) => {
       });
     }
 
-    const recipientName =
-      certificate.recipientSnapshot?.name ||
-      certificate.recipient?.name;
-
-    const certificateTitle =
-      certificate.templateSnapshot?.title ||
-      certificate.template?.title;
-
-    const organization =
-      certificate.templateSnapshot?.organization ||
-      certificate.recipientSnapshot?.organization ||
-      certificate.template?.organization ||
-      certificate.recipient?.organization ||
-      "";
-
     if (!recipientName || !certificateTitle) {
       return res.status(410).json({
         success: true,
@@ -236,14 +245,7 @@ const verifyCertificate = async (req, res) => {
       success: true,
       verified: true,
       message: "Certificate is authentic and valid",
-      certificate: {
-        certificateId: certificate.certificateId,
-        recipientName,
-        certificateTitle,
-        organization,
-        issuedAt: certificate.issuedAt,
-        status: certificate.status
-      }
+      certificate: certificateDetails
     });
   } catch (error) {
     console.error("Verification error:", error.message);
