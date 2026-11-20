@@ -5,7 +5,7 @@ import Sidebar from "./components/Sidebar";import Topbar from "./components/Topb
 
 import "./styles.css";
 import AuthScreen from "./components/AuthScreen";
-import { api, authStorage } from "./services/api";
+import { api, authStorage, API_BASE } from "./services/api";
 import PublicCertificateVerification from "./pages/PublicCertificateVerification";
 
 const Dashboard=lazy(()=>import("./pages/Dashboard"));
@@ -150,7 +150,7 @@ const deleteRecipient=async id=>{const recipient=recipients.find(r=>r.id===id);i
 const downloadIssuedCertificate=async credential=>{
   try{
     const token=authStorage.getToken();
-    const response=await fetch(`/api/issued-certificates/${encodeURIComponent(credential.certificateId)}/pdf`,{headers:token?{Authorization:`Bearer ${token}`}:{}});
+    const response=await fetch(`${API_BASE}/issued-certificates/${encodeURIComponent(credential.certificateId)}/pdf`,{headers:token?{Authorization:`Bearer ${token}`}:{}});
     if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.message||"PDF download failed");}
     const blob=await response.blob();
     const url=URL.createObjectURL(blob);
