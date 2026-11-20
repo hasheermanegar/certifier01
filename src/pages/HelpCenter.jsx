@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 const articles = [
   {
@@ -212,7 +212,7 @@ export default function HelpCenter() {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 16 }}>
-            {filtered.map((article, i) => (
+            {filtered.map(article => (
               <button key={article.title} onClick={() => setActive(article)} style={cardStyle}>
                 <small style={{ color: "#315eea", fontWeight: 600 }}>{article.category}</small>
                 <h3 style={{ fontSize: 16, margin: "12px 0 7px" }}>{article.title}</h3>

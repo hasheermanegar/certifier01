@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { QrCode, ShieldCheck, Link2, Plus, Info } from "lucide-react";
 
 export default function QRCodesPanel({ onAdd }) {

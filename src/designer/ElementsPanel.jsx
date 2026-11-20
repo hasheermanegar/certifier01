@@ -1,4 +1,3 @@
-import React from "react";
 
 const shapes = [
   { name: "Rectangle", icon: "▭", shape: "rectangle" },

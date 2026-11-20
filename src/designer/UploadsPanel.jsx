@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { ImagePlus, Upload, Image as ImageIcon } from "lucide-react";
 
 export default function UploadsPanel({ onUpload, images = [] }) {

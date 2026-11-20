@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 
 export default function Analytics({ credentials = [], recipients = [], pathways = [], designs = [] }) {
   const stats = useMemo(() => {

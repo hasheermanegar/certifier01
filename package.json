@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "npm --prefix backend test",
+    "verify": "npm run build && npm --prefix backend run check && npm --prefix backend test"
   },
   "dependencies": {
     "html2canvas": "^1.4.1",

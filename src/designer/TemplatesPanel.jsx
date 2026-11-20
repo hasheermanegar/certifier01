@@ -1,5 +1,5 @@
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 const templates = [
   { id: 1, name: "Classic Blue", category: "Professional", bg: "#ffffff", border: "#315eea", accent: "#172554", title: "CERTIFICATE", subtitle: "OF ACHIEVEMENT" },
@@ -39,7 +39,7 @@ function Preview({ item, portrait = false }) {
   );
 }
 
-export default function TemplatesPanel({ design, onChange, onApply }) {
+export default function TemplatesPanel({ design, onApply }) {
   const [orientation, setOrientation] = useState(design.orientation || "landscape");
   const [category, setCategory] = useState("All");
   const [recent, setRecent] = useState([1]);

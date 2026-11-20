@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { CheckCircle2, Circle, ArrowRight, Sparkles, Award, Users, Mail, Plug, Palette } from "lucide-react";
 
 const initialTasks = [

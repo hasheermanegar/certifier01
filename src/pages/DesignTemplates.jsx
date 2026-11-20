@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Search, Plus, Pencil, Trash2, FileText, LayoutTemplate } from "lucide-react";
 
 function CertificateThumbnail({ design }) {

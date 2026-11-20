@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Plug, KeyRound, Webhook, Copy, Plus, Trash2, Eye, EyeOff, CheckCircle2, Circle, ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plug, KeyRound, Webhook, Copy, Plus, Trash2, Eye, EyeOff, ExternalLink } from "lucide-react";
 
 const services = [
   { id: "google", name: "Google Sheets", category: "Productivity", description: "Export recipient and credential data to spreadsheets.", icon: "📊" },

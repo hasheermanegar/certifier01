@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 const presets = [
   { name: "Heading", text: "Certificate of Achievement", size: 38, fontFamily: "Manrope", bold: true },

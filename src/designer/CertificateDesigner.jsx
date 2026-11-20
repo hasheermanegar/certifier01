@@ -1,8 +1,6 @@
-import React,{useEffect,useRef,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import {Rnd} from "react-rnd";
 import {QRCodeSVG} from "qrcode.react";
-import html2canvas from "html2canvas";
-import {jsPDF} from "jspdf";
 import ToolRail from "./ToolRail";
 import TemplatesPanel from "./TemplatesPanel";
 import ElementsPanel from "./ElementsPanel";
@@ -30,11 +28,48 @@ function templateElements(p, portrait) {
 }
 
 export default function CertificateDesigner({design:initial,onSave,onClose}) {
-  const [d,D]=useState(()=>({...initial,elements:initial.elements||[]}));
+  const [d,D]=useState(()=>({...initial,elements:initial.elements||[]}));  const designRef=useRef(d);
+  const undoStack=useRef([]);
+  const redoStack=useRef([]);
+  const [historyCounts,setHistoryCounts]=useState({undo:0,redo:0});
+
+  const updateDesign=updater=>{
+    const previous=designRef.current;
+    const next=typeof updater==="function"?updater(previous):updater;
+    if(next===previous)return;
+    undoStack.current.push(previous);
+    if(undoStack.current.length>50)undoStack.current.shift();
+    redoStack.current=[];
+    designRef.current=next;
+    D(next);
+    setHistoryCounts({undo:undoStack.current.length,redo:0});
+  };
+
+  const undo=()=>{
+    if(!undoStack.current.length)return;
+    const previous=undoStack.current.pop();
+    redoStack.current.push(designRef.current);
+    designRef.current=previous;
+    D(previous);
+    setHistoryCounts({undo:undoStack.current.length,redo:redoStack.current.length});
+  };
+
+  const redo=()=>{
+    if(!redoStack.current.length)return;
+    const next=redoStack.current.pop();
+    undoStack.current.push(designRef.current);
+    designRef.current=next;
+    D(next);
+    setHistoryCounts({undo:undoStack.current.length,redo:redoStack.current.length});
+  };
+
   const [tool,T]=useState("Templates");
+  const [mobilePanel,setMobilePanel]=useState("");
   const [selected,S]=useState(null);
+  const selectedRef=useRef(selected);
+  useEffect(()=>{selectedRef.current=selected;},[selected]);
   const [uploads,U]=useState([]);
-  const [backgroundImage,setBackgroundImage]=useState("");
+  const [backgroundImage,setBackgroundImage]=useState(initial.backgroundImage || "");
   const [msg,M]=useState("");
   const [previewImage,setPreviewImage]=useState("");
   const [zoom,Z]=useState(65);
@@ -52,8 +87,10 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
     return ()=>observer.disconnect();
   },[]);
 
+;
+
   const cur=d.elements.find(e=>e.id===selected);
-  const patch=(i,v)=>D(x=>({...x,elements:x.elements.map(e=>e.id===i?{...e,...v}:e)}));
+  const patch=(i,v)=>updateDesign(x=>({...x,elements:x.elements.map(e=>e.id===i?{...e,...v}:e)}));
   const add=(type,text,extra={})=>{
     const qr=type==="qr";
     const image=type==="image";
@@ -72,10 +109,85 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
       align:"center",
       ...extra
     };
-    D(x=>({...x,elements:[...x.elements,e]}));
+    updateDesign(x=>({...x,elements:[...x.elements,e]}));
     S(e.id);
   };
-  const del=i=>{D(x=>({...x,elements:x.elements.filter(e=>e.id!==i)}));S(null)};
+  const del=i=>{updateDesign(x=>({...x,elements:x.elements.filter(e=>e.id!==i)}));S(null)};
+
+  const clipboardRef=useRef(null);
+  const keyboardActionsRef=useRef({});
+  const pasteCount=useRef(0);
+
+  const copyElement=()=>{
+    const element=d.elements.find(e=>e.id===selected);
+    if(!element)return;
+    clipboardRef.current=structuredClone(element);
+    pasteCount.current=0;
+    M("Element copied");
+    setTimeout(()=>M(""),1200);
+  };
+
+  const pasteElement=()=>{
+    if(!clipboardRef.current)return;
+    const source=structuredClone(clipboardRef.current);
+    const offset=30+(pasteCount.current*12);
+    pasteCount.current++;
+    const copy={...source,id:id(),x:(source.x||0)+offset,y:(source.y||0)+offset};
+    updateDesign(x=>({...x,elements:[...x.elements,copy]}));
+    S(copy.id);
+  };
+
+  const duplicateElement=()=>{
+    const element=d.elements.find(e=>e.id===selected);
+    if(!element)return;
+    const copy={...structuredClone(element),id:id(),x:(element.x||0)+30,y:(element.y||0)+30};
+    updateDesign(x=>({...x,elements:[...x.elements,copy]}));
+    clipboardRef.current=structuredClone(element);
+    S(copy.id);
+  };
+
+  useEffect(()=>{keyboardActionsRef.current={copyElement,pasteElement,duplicateElement,del};});
+
+  useEffect(()=>{
+    const handler=e=>{
+      if(e.target?.closest?.('input,textarea,select,[contenteditable="true"]'))return;
+      if(!(e.metaKey||e.ctrlKey))return;
+      const key=e.key.toLowerCase();
+      const actions=keyboardActionsRef.current;
+      if(key==="c"){
+        if(!selectedRef.current)return;
+        e.preventDefault();
+        actions.copyElement();
+      }else if(key==="v"){
+        e.preventDefault();
+        actions.pasteElement();
+      }else if(key==="d"){
+        if(!selectedRef.current)return;
+        e.preventDefault();
+        actions.duplicateElement();
+      }
+    };
+    window.addEventListener("keydown",handler);
+    return ()=>window.removeEventListener("keydown",handler);
+  },[]);
+
+
+
+  useEffect(()=>{
+    const handler=e=>{
+      if(e.target?.closest?.('input,textarea,select,[contenteditable="true"]'))return;
+      if(!(e.metaKey||e.ctrlKey))return;
+      if(e.key.toLowerCase()==="z"){
+        e.preventDefault();
+        e.shiftKey?redo():undo();
+      }else if(e.key.toLowerCase()==="y"&&e.ctrlKey){
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener("keydown",handler);
+    return ()=>window.removeEventListener("keydown",handler);
+  },[]);
 
   // Delete the selected canvas element using the keyboard.
   useEffect(()=>{
@@ -84,16 +196,17 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
 
       const target=e.target;
       if(target?.closest?.('input,textarea,select,[contenteditable="true"]'))return;
-      if(!selected || !d.elements.some(element=>element.id===selected))return;
+      const currentSelected=selectedRef.current;
+      if(!currentSelected || !designRef.current.elements.some(element=>element.id===currentSelected))return;
 
       e.preventDefault();
-      del(selected);
+      keyboardActionsRef.current.del(currentSelected);
     };
 
     window.addEventListener("keydown",handleKeyDown);
     return ()=>window.removeEventListener("keydown",handleKeyDown);
-  },[selected,d.elements]);
-  const move=(i,delta)=>D(x=>{
+  },[]);
+  const move=(i,delta)=>updateDesign(x=>{
     const a=[...x.elements],n=a.findIndex(e=>e.id===i),j=Math.max(0,Math.min(a.length-1,n+delta));
     if(n<0)return x;const [v]=a.splice(n,1);a.splice(j,0,v);return{...x,elements:a};
   });
@@ -104,7 +217,7 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
   };
   const change=v=>{
     if(v==="landscape"||v==="portrait"){
-      D(x=>{
+      updateDesign(x=>{
         const newW=v==="landscape"?1120:790;
         const newH=v==="landscape"?790:1120;
         const oldW=x.width||1120;
@@ -130,19 +243,20 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
         };
       });
     }else{
-      D(x=>({...x,background:v}));
+      updateDesign(x=>({...x,background:v}));
     }
   };
   const applyTemplate=(p,orientation)=>{
     const selectedOrientation=p.orientation || orientation || "landscape";
     const portrait=selectedOrientation==="portrait";
     setBackgroundImage(p.backgroundImage || "");
-    D(x=>({...x,name:p.name || x.name,orientation:selectedOrientation,width:p.width || (portrait?790:1120),height:p.height || (portrait?1120:790),background:p.background || p.bg || "#ffffff",elements:Array.isArray(p.elements)?p.elements:templateElements(p,portrait)}));
+    updateDesign(x=>({...x,name:p.name || x.name,orientation:selectedOrientation,width:p.width || (portrait?790:1120),height:p.height || (portrait?1120:790),background:p.background || p.bg || "#ffffff",elements:Array.isArray(p.elements)&&p.elements.length>0?p.elements:templateElements(p,portrait)}));
     S(null);M((p.name || "Certificate")+" template applied");setTimeout(()=>M(""),1800);
   };
 
   const previewCertificate=async()=>{
     try {
+      const { default: html2canvas } = await import("html2canvas");
       M("Preparing preview...");
       const imageCanvas=await html2canvas(canvas.current,{
         scale:2,
@@ -167,6 +281,10 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
 
   const exportPDF=async()=>{
     try{
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf")
+      ]);
       M("Preparing PDF…");
       const c=await html2canvas(canvas.current,{scale:2,backgroundColor:null});
       const pdf=new jsPDF({orientation:d.orientation,unit:"px",format:[d.width,d.height]});
@@ -184,7 +302,8 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
     :tool==="Layers"?<LayersPanel elements={d.elements} selected={selected} onSelect={S} onDelete={del} onMove={move}/>
     :<ElementsPanel onAdd={add}/>;
 
-  const scale=Math.max(0.01,Math.min(zoom/100,(workspaceSize.width-60)/d.width,(workspaceSize.height-60)/d.height));
+  const fitScale=Math.max(0.01,Math.min((workspaceSize.width-60)/d.width,(workspaceSize.height-60)/d.height));
+  const scale=Math.max(0.01,fitScale*(zoom/100));
 
   return <div className="designer-page cp-designer" data-orientation={d.orientation}>
     <header className="cp-designer-top">
@@ -194,24 +313,34 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
         <div className="cp-design-heading"><b>{d.name||"Untitled certificate"}</b><small>Certificate designer</small></div>
       </div>
       <div className="cp-top-actions">
+        <button className="cp-top-button" title="Undo (Cmd/Ctrl+Z)" disabled={!historyCounts.undo} onClick={undo}>↶</button>
+        <button className="cp-top-button" title="Redo (Cmd/Ctrl+Shift+Z)" disabled={!historyCounts.redo} onClick={redo}>↷</button>
         <button className="cp-top-button" onClick={()=>Z(Math.max(25,zoom-10))}>−</button>
         <span className="cp-zoom-label">{zoom}%</span>
-        <button className="cp-top-button" onClick={()=>Z(Math.min(100,zoom+10))}>＋</button>
+        <button className="cp-top-button" onClick={()=>Z(Math.min(150,zoom+10))}>＋</button>
+        <button className="cp-top-button" onClick={()=>Z(100)}>Fit</button>
         <button className="cp-top-button cp-preview-button" onClick={previewCertificate}>◉ Preview</button>
         <button className="btn-secondary" onClick={exportPDF}>↓ Export PDF</button>
-        <button className="btn-primary" onClick={()=>{onSave(d);M("Design saved");setTimeout(()=>M(""),1800)}}>Save design</button>
+        <button className="btn-primary" onClick={()=>{onSave({...d,backgroundImage});M("Design saved");setTimeout(()=>M(""),1800)}}>Save design</button>
       </div>
     </header>
 
     <div className="cp-editor-body">
-      <ToolRail active={tool} onSelect={nextTool=>{T(nextTool);S(null)}}/>
-      <aside className="cp-editor-panel">{panel}</aside>
+      <ToolRail active={tool} onSelect={nextTool=>{T(nextTool);S(null);setMobilePanel("tools")}}/>
+      <aside className={`cp-editor-panel ${mobilePanel==="tools"?"cp-mobile-open":""}`}>{panel}</aside>
+      {mobilePanel && <button type="button" className="cp-mobile-drawer-backdrop" aria-label="Close panel" onClick={()=>setMobilePanel("")}/>}
       <main className="cp-workspace">
         <div className="cp-workspace-toolbar">
           <div><span className="cp-live-dot"/> <b>{d.name||"Untitled certificate"}</b><span className="cp-toolbar-separator">|</span><span>{d.orientation==="portrait"?"Portrait":"Landscape"} · {d.width} × {d.height}</span></div>
-          <div><button onClick={()=>change("landscape")} className={d.orientation==="landscape"?"chosen":""}>Landscape</button><button onClick={()=>change("portrait")} className={d.orientation==="portrait"?"chosen":""}>Portrait</button></div>
+          <div className="cp-workspace-toolbar-actions">
+            <button type="button" className="cp-mobile-panel-toggle" onClick={()=>setMobilePanel(v=>v==="tools"?"":"tools")}>Tools</button>
+            <button type="button" className="cp-mobile-panel-toggle" onClick={()=>setMobilePanel(v=>v==="properties"?"":"properties")}>Properties</button>
+            <button onClick={()=>change("landscape")} className={d.orientation==="landscape"?"chosen":""}>Landscape</button>
+            <button onClick={()=>change("portrait")} className={d.orientation==="portrait"?"chosen":""}>Portrait</button>
+          </div>
         </div>
         <div className="cp-canvas-workarea">
+
           {cur && (cur.type==="text" || cur.type==="attribute") && (
             <div className="cp-inline-toolbar" onMouseDown={e=>e.stopPropagation()}>
               <select aria-label="Font family" value={cur.fontFamily||"Inter"} onChange={e=>patch(cur.id,{fontFamily:e.target.value})}>
@@ -278,7 +407,7 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
           <div className="cp-canvas-footer"><span>CertifyPro Studio</span><span>{d.elements.length} elements · {d.width} × {d.height}px</span></div>
         </div>
       </main>
-      <aside className="cp-properties cp-properties-v2">
+      <aside className={`cp-properties cp-properties-v2 ${mobilePanel==="properties"?"cp-mobile-open":""}`}>
         <div className="cp-properties-heading cp-props-header">
           <div>
             <span className="cp-kicker">DESIGN INSPECTOR</span>
@@ -416,10 +545,10 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
             <span>DOCUMENT</span>
           </div>
           <label className="cp-props-field">Design name
-            <input value={d.name || ""} onChange={e=>D(x=>({...x,name:e.target.value}))}/>
+            <input value={d.name || ""} onChange={e=>updateDesign(x=>({...x,name:e.target.value}))}/>
           </label>
           <label className="cp-props-field">Canvas background
-            <input type="color" value={/^#[0-9a-f]{6}$/i.test(d.background) ? d.background : "#ffffff"} onChange={e=>D(x=>({...x,background:e.target.value}))}/>
+            <input type="color" value={/^#[0-9a-f]{6}$/i.test(d.background) ? d.background : "#ffffff"} onChange={e=>updateDesign(x=>({...x,background:e.target.value}))}/>
           </label>
           <div className="cp-props-canvas-meta">
             <span>Canvas dimensions</span>

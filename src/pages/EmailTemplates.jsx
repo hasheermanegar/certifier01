@@ -1,21 +1,8 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 const uid = () => crypto.randomUUID();
 
-const defaults = [
-  {
-    id: "default-1",
-    name: "Certificate delivery",
-    subject: "Congratulations {{recipient_name}}! Your certificate is ready",
-    body: "Hello {{recipient_name}},\n\nCongratulations! You have successfully received your {{credential_title}}.\n\nYour certificate was issued on {{issue_date}}.\n\nThank you,\nThe CertifyPro Team"
-  },
-  {
-    id: "default-2",
-    name: "Certificate reminder",
-    subject: "Your certificate is waiting",
-    body: "Hello {{recipient_name}},\n\nYour {{credential_title}} is ready. Please visit your certificate link to view it.\n\nRegards,\nThe CertifyPro Team"
-  }
-];
+
 
 const variables = [
   "{{recipient_name}}",

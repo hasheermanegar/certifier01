@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Type, QrCode, Image, Shapes, Braces,
   Eye, EyeOff, ChevronUp, ChevronDown,
@@ -98,7 +98,7 @@ export default function LayersPanel({
       </div>
 
       <div className="cp-layer-list">
-        {filtered.map((element, index) => {
+        {filtered.map(element => {
           const info = getLayerInfo(element);
           const Icon = info.icon;
           const isSelected = selected === element.id;
