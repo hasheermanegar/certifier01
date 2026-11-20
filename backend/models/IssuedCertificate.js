@@ -23,6 +23,21 @@ const issuedCertificateSchema = new mongoose.Schema(
       ref: "User",
       required: true
     },
+
+    // Immutable copies of the information at issuance time.
+    designSnapshot: {
+      type: mongoose.Schema.Types.Mixed,
+      default: undefined
+    },
+    recipientSnapshot: {
+      type: mongoose.Schema.Types.Mixed,
+      default: undefined
+    },
+    templateSnapshot: {
+      type: mongoose.Schema.Types.Mixed,
+      default: undefined
+    },
+
     verificationUrl: {
       type: String,
       required: true
@@ -33,9 +48,12 @@ const issuedCertificateSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["valid", "revoked"],
+      enum: ["valid", "revoked", "expired"],
       default: "valid"
     },
+    expiresAt: { type: Date, default: null },
+    emailStatus: { type: String, enum: ["pending", "sent", "failed", "not_configured"], default: "not_configured" },
+    emailSentAt: { type: Date, default: null },
     issuedAt: {
       type: Date,
       default: Date.now

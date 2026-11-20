@@ -164,7 +164,7 @@ const updateRecipient = async (req, res) => {
     if (email !== undefined) {
       if (
         typeof email !== "string" ||
-        !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email.trim())
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
       ) {
         return res.status(400).json({
           success: false,
