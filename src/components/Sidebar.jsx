@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 const items = ["Dashboard","Credential Templates","All Credentials","Recipients","Bulk Issuing","Pathways","Analytics","Design Templates","Email Templates","Forms","Integrations","Getting Started","Credential Usage","Settings","Help Center"];
 const icons = ["⌂","▤","▧","♙","⇧","◇","▥","▧","✉","▣","⌘","◎","◷","⚙","?"];
 
-export default function Sidebar({ page, setPage }) {
+export default function Sidebar({ page, setPage, mobileOpen = false, onClose = () => {} }) {
+  const [collapsed, setCollapsed] = useState(() => (
+    page === "Design Templates" || window.matchMedia("(max-width: 900px)").matches
+  ));
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -25,6 +29,8 @@ export default function Sidebar({ page, setPage }) {
 
   const openPage = name => {
     setPage(name);
+    setCollapsed(name === "Design Templates" || window.matchMedia("(max-width: 900px)").matches);
+    onClose();
     setSearchOpen(false);
     setQuery("");
   };
@@ -42,21 +48,34 @@ export default function Sidebar({ page, setPage }) {
   };
 
   return <>
-    <aside className="sidebar">
-      <div className="brand"><b className="brand-mark">C</b>certify<span>pro</span></div>
+    {mobileOpen && <button type="button" className="mobile-nav-backdrop" aria-label="Close navigation menu" onClick={onClose}/>}
+    <aside id="primary-navigation" className={`sidebar ${mobileOpen ? "mobile-open" : ""} ${collapsed ? "is-collapsed" : ""}`}>
+      <div className="sidebar-brand-row">
+        <div className="brand"><b className="brand-mark">C</b>certify<span>pro</span></div>
+        <button
+          type="button"
+          className="sidebar-collapse-toggle"
+          onClick={() => setCollapsed(value => !value)}
+          aria-label={collapsed ? "Expand workspace sidebar" : "Collapse workspace sidebar"}
+          aria-expanded={!collapsed}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <PanelLeftOpen size={17}/> : <PanelLeftClose size={17}/>}
+        </button>
+      </div>
       <div className="workspace-switch"><b>H</b><span>My workspace<small>Free plan</small></span>⌄</div>
-      <button className="quick-search" onClick={() => { setQuery(""); setActiveIndex(0); setSearchOpen(true); setTimeout(() => inputRef.current?.focus(), 30); }} type="button">
+      <button className="quick-search" onClick={() => { onClose(); setQuery(""); setActiveIndex(0); setSearchOpen(true); setTimeout(() => inputRef.current?.focus(), 30); }} type="button">
         <span>⌕ Quick search</span><kbd>⌘ K</kbd>
       </button>
       <small className="nav-label">WORKSPACE</small>
       {items.slice(0, 11).map((x, i) =>
-        <button key={x} className={`nav-item ${page === x ? "active" : ""}`} onClick={() => openPage(x)}>
+        <button key={x} className={`nav-item ${page === x ? "active" : ""}`} onClick={() => openPage(x)} title={x}>
           <span>{icons[i]}</span>{x}
         </button>
       )}
       <small className="nav-label support">SUPPORT</small>
       {items.slice(11).map((x, i) =>
-        <button key={x} className={`nav-item ${page === x ? "active" : ""}`} onClick={() => openPage(x)}>
+        <button key={x} className={`nav-item ${page === x ? "active" : ""}`} onClick={() => openPage(x)} title={x}>
           <span>{icons[i + 11]}</span>{x}
         </button>
       )}
