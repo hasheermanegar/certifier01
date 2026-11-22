@@ -105,7 +105,7 @@ function Preview({ item, portrait = false }) {
   return (
     <div className={`template-preview ${portrait ? "portrait" : ""} ${item.custom ? "has-design-preview" : ""}`} data-layout={item.custom ? "custom" : String(((Number(item.id) || 1) - 1) % 10)}
       style={{
-        background: item.bg || item.background || "#fff",
+      background: item.custom ? item.bg || item.background || "#fff" : "#ffffff",
         borderColor: item.border || "#d7dee9"
       }}>
       {item.custom ? (
@@ -314,14 +314,15 @@ function buildDistinctTemplateElements(item, orientation) {
 // eslint-disable-next-line react-refresh/only-export-components
 export function createTemplateDesign(item, orientation = "landscape") {
   const portrait = orientation === "portrait";
+  const whiteBackgroundTemplate = { ...item, bg: "#ffffff" };
   return {
     id: crypto.randomUUID(),
     name: item.name,
     orientation,
     width: portrait ? 790 : 1120,
     height: portrait ? 1120 : 790,
-    background: item.bg || "#ffffff",
-    elements: buildDistinctTemplateElements(item, orientation)
+    background: "#ffffff",
+    elements: buildDistinctTemplateElements(whiteBackgroundTemplate, orientation)
   };
 }
 
@@ -343,8 +344,10 @@ export default function TemplatesPanel({ design, backgroundImage = "", onApply }
     const width = isCustom ? item.width || (portrait ? 790 : 1120) : (portrait ? 790 : 1120);
     const height = isCustom ? item.height || (portrait ? 1120 : 790) : (portrait ? 1120 : 790);
 
-    const elements = isCustom ? (item.elements || []) : buildDistinctTemplateElements(item, itemOrientation);
-    const background = item.background || item.bg || "#ffffff";
+    const background = isCustom ? item.background || item.bg || "#ffffff" : "#ffffff";
+    const elements = isCustom
+      ? (item.elements || [])
+      : buildDistinctTemplateElements({ ...item, bg: background }, itemOrientation);
 
     onApply({
       ...design,
