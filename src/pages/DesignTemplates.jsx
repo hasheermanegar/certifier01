@@ -1,15 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, Plus, Pencil, Trash2, FileText, LayoutTemplate, Library, Upload, ExternalLink, Cloud, Link2 } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Search, Plus, Pencil, Trash2, FileText, LayoutTemplate, Library, Upload, ExternalLink } from "lucide-react";
 import CertificateThumbnail from "../designer/CertificateThumbnail";
 import { createTemplateDesign, templateCatalog } from "../designer/TemplatesPanel";
 import TemplateLibraryDialog from "../designer/TemplateLibraryDialog";
 import { createImportedTemplates, normalizeCustomTemplate } from "../designer/customTemplates";
-import {
-  getGoogleDriveSetupMessage,
-  importPublicGoogleDriveTemplate,
-  importSelectedGoogleDriveTemplates,
-  preloadGoogleDrivePicker
-} from "../designer/googleDrive";
 
 function LibraryTemplateCard({ item, design, onUse }) {
   return (
@@ -44,9 +38,6 @@ export default function DesignTemplates({ designs = [], onCreate, onOpen, onDele
   const [importing, setImporting] = useState(false);
   const [importMessage, setImportMessage] = useState(null);
   const [canvaUrl, setCanvaUrl] = useState("");
-  const [driveLink, setDriveLink] = useState("");
-  const [drivePickerReady, setDrivePickerReady] = useState(false);
-  const [drivePickerLoadError, setDrivePickerLoadError] = useState("");
   const [customTemplates, setCustomTemplates] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("cp-custom-templates") || "[]");
@@ -58,21 +49,6 @@ export default function DesignTemplates({ designs = [], onCreate, onOpen, onDele
       return [];
     }
   });
-  const drivePickerSetupMessage = getGoogleDriveSetupMessage({ picker: true });
-  const driveLinkSetupMessage = getGoogleDriveSetupMessage();
-
-  useEffect(() => {
-    if (drivePickerSetupMessage) return;
-
-    let active = true;
-    preloadGoogleDrivePicker().then(() => {
-      if (active) setDrivePickerReady(true);
-    }).catch(error => {
-      if (active) setDrivePickerLoadError(error.message);
-    });
-    return () => { active = false; };
-  }, [drivePickerSetupMessage]);
-  const drivePickerError = drivePickerSetupMessage || drivePickerLoadError;
 
   const list = designs.filter(d =>
     (d.name || "").toLowerCase().includes(search.toLowerCase())
@@ -162,52 +138,6 @@ export default function DesignTemplates({ designs = [], onCreate, onOpen, onDele
     }
   };
 
-  const importPublicDriveLink = async () => {
-    if (!driveLink.trim()) return;
-    setImporting(true);
-    setImportMessage(null);
-    try {
-      const imported = await importPublicGoogleDriveTemplate(driveLink);
-      saveCustomTemplates(imported);
-      setDriveLink("");
-      setImportMessage({
-        type: "success",
-        text: `${imported.length} template${imported.length === 1 ? "" : "s"} imported from Google Drive.`
-      });
-    } catch (error) {
-      console.error("Could not import public Google Drive file:", error);
-      setImportMessage({ type: "error", text: error.message || "Could not import that Drive file." });
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  const importFromGoogleDrive = async () => {
-    setImporting(true);
-    setImportMessage(null);
-    const imported = [];
-    const failures = [];
-    try {
-      const result = await importSelectedGoogleDriveTemplates();
-      imported.push(...result.templates);
-      failures.push(...result.failures);
-      if (imported.length) saveCustomTemplates(imported);
-      if (!result.selectedCount) return;
-      setImportMessage({
-        type: failures.length ? "error" : "success",
-        text: [
-          imported.length ? `${imported.length} template${imported.length === 1 ? "" : "s"} imported from Google Drive.` : "",
-          ...failures
-        ].filter(Boolean).join(" ")
-      });
-    } catch (error) {
-      console.error("Could not import from Google Drive:", error);
-      setImportMessage({ type: "error", text: error.message || "Could not import from Google Drive." });
-    } finally {
-      setImporting(false);
-    }
-  };
-
   return (
     <div className="page-content cp-design-library">
       <div className="cp-design-heading">
@@ -230,7 +160,7 @@ export default function DesignTemplates({ designs = [], onCreate, onOpen, onDele
         <div className="cp-canva-import-copy">
           <span>DESIGN IMPORT</span>
           <h2>Bring a design into your library</h2>
-          <p>Upload a file, choose a Google Drive file, or import a publicly shared Drive link.</p>
+          <p>Upload a file or import a Canva design link.</p>
         </div>
         <div className="cp-canva-import-controls">
           <label className="cp-design-canva-url">
@@ -246,34 +176,6 @@ export default function DesignTemplates({ designs = [], onCreate, onOpen, onDele
           <button type="button" className="cp-design-create" onClick={() => importInput.current?.click()} disabled={importing}>
             <Upload size={15} /> {importing ? "Importing…" : "Upload template file"}
           </button>
-          <div className="cp-drive-import-controls">
-            <label className="cp-design-drive-url">
-              <span>Public Google Drive link</span>
-              <input
-                type="url"
-                value={driveLink}
-                onChange={event => setDriveLink(event.target.value)}
-                placeholder="https://drive.google.com/file/d/…"
-                aria-label="Public Google Drive file link"
-              />
-            </label>
-            <button
-              type="button"
-              className="cp-design-create"
-              onClick={() => { void importPublicDriveLink(); }}
-              disabled={importing || !driveLink.trim() || !!driveLinkSetupMessage}
-            >
-              <Link2 size={15} /> Import link
-            </button>
-            <button
-              type="button"
-              className="cp-design-create"
-              onClick={() => { void importFromGoogleDrive(); }}
-              disabled={importing || !drivePickerReady || !!drivePickerSetupMessage}
-            >
-              <Cloud size={15} /> {drivePickerSetupMessage ? "Drive not configured" : drivePickerReady ? "Choose from Drive" : "Loading Drive…"}
-            </button>
-          </div>
           <input
             ref={importInput}
             type="file"
@@ -282,9 +184,8 @@ export default function DesignTemplates({ designs = [], onCreate, onOpen, onDele
             onChange={event => { void importCanvaExport(event); }}
           />
         </div>
-        {drivePickerError && <p className="cp-drive-setup-help" role="status">{drivePickerError}</p>}
       </section>
-      <p className="cp-design-import-help">PowerPoint files and Google Slides can be imported as editable layers. Each page of a PDF is saved as a separate flat-artwork template. Public Drive links must be accessible to anyone with the link.</p>
+      <p className="cp-design-import-help">PowerPoint files can be imported as editable layers. Each page of a PDF is saved as a separate flat-artwork template.</p>
       {importMessage && (
         <p className={`cp-design-import-status ${importMessage.type}`} role={importMessage.type === "error" ? "alert" : "status"}>
           {importMessage.text}
@@ -469,11 +370,6 @@ export default function DesignTemplates({ designs = [], onCreate, onOpen, onDele
                         <ExternalLink size={13}/> Open in Canva
                       </a>
                     )}
-                    {template.driveUrl && (
-                      <a className="cp-design-edit cp-design-canva-link" href={template.driveUrl} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink size={13}/> Open in Drive
-                      </a>
-                    )}
                     <button className="cp-design-delete" onClick={() => deleteCustomTemplate(template)}>
                       <Trash2 size={13}/> Delete
                     </button>
@@ -498,7 +394,6 @@ export default function DesignTemplates({ designs = [], onCreate, onOpen, onDele
         onClose={() => setLibraryOpen(false)}
         onSelect={chooseTemplate}
         onImportFile={() => importInput.current?.click()}
-        onImportDrive={() => { void importFromGoogleDrive(); }}
         onDeleteCustom={deleteCustomTemplate}
       />
     </div>

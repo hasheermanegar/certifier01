@@ -1,14 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { ChevronRight, LayoutTemplate, Cloud, Link2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { ChevronRight, LayoutTemplate } from "lucide-react";
 import CertificateThumbnail from "./CertificateThumbnail";
 import TemplateLibraryDialog from "./TemplateLibraryDialog";
 import { createImportedTemplates, normalizeCustomTemplate } from "./customTemplates";
-import {
-  getGoogleDriveSetupMessage,
-  importPublicGoogleDriveTemplate,
-  importSelectedGoogleDriveTemplates,
-  preloadGoogleDrivePicker
-} from "./googleDrive";
 
 const baseTemplates = [
   { id: 1, name: "Classic Achievement", category: "Certificates", bg: "#ffffff", border: "#315eea", accent: "#172554", title: "CERTIFICATE", subtitle: "OF ACHIEVEMENT" },
@@ -337,26 +331,8 @@ export default function TemplatesPanel({ design, backgroundImage = "", onApply }
   const [custom, setCustom] = useState(readCustomTemplates);
   const [notice, setNotice] = useState("");
   const [libraryOpen, setLibraryOpen] = useState(false);
-  const [driveLink, setDriveLink] = useState("");
   const [importing, setImporting] = useState(false);
-  const [drivePickerReady, setDrivePickerReady] = useState(false);
-  const [drivePickerLoadError, setDrivePickerLoadError] = useState("");
   const uploadInput = useRef(null);
-  const drivePickerSetupMessage = getGoogleDriveSetupMessage({ picker: true });
-  const driveLinkSetupMessage = getGoogleDriveSetupMessage();
-
-  useEffect(() => {
-    if (drivePickerSetupMessage) return;
-
-    let active = true;
-    preloadGoogleDrivePicker().then(() => {
-      if (active) setDrivePickerReady(true);
-    }).catch(error => {
-      if (active) setDrivePickerLoadError(error.message);
-    });
-    return () => { active = false; };
-  }, [drivePickerSetupMessage]);
-  const drivePickerError = drivePickerSetupMessage || drivePickerLoadError;
 
   const recentTemplates = templates.filter(template => recent.includes(template.id));
 
@@ -423,44 +399,6 @@ export default function TemplatesPanel({ design, backgroundImage = "", onApply }
     }
   };
 
-  const importPublicDriveLink = async () => {
-    if (!driveLink.trim()) return;
-    setImporting(true);
-    try {
-      const imported = await importPublicGoogleDriveTemplate(driveLink);
-      saveImportedTemplates(imported);
-      setDriveLink("");
-      setNotice(`${imported.length} template${imported.length === 1 ? "" : "s"} imported from Google Drive.`);
-    } catch (error) {
-      console.error("Could not import public Google Drive file:", error);
-      setNotice("Drive import failed: " + (error?.message || "Could not import that file."));
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  const importFromGoogleDrive = async () => {
-    setImporting(true);
-    const imported = [];
-    const failures = [];
-    try {
-      const result = await importSelectedGoogleDriveTemplates();
-      imported.push(...result.templates);
-      failures.push(...result.failures);
-      if (imported.length) saveImportedTemplates(imported);
-      if (!result.selectedCount) return;
-      setNotice([
-        imported.length ? `${imported.length} template${imported.length === 1 ? "" : "s"} imported from Google Drive.` : "",
-        ...failures
-      ].filter(Boolean).join(" "));
-    } catch (error) {
-      console.error("Could not import from Google Drive:", error);
-      setNotice("Drive import failed: " + (error?.message || "Could not import from Google Drive."));
-    } finally {
-      setImporting(false);
-    }
-  };
-
   const saveCurrent = () => {
     const name = window.prompt("Name this reusable template:", design.name || "My Certificate");
     if (!name || !name.trim()) return;
@@ -520,30 +458,8 @@ export default function TemplatesPanel({ design, backgroundImage = "", onApply }
         <button type="button" onClick={saveCurrent}>Save Current Design</button>
       </div>
 
-      <div className="cp-drive-template-import">
-        <label>
-          <span>Public Google Drive link</span>
-          <input
-            type="url"
-            value={driveLink}
-            onChange={event => setDriveLink(event.target.value)}
-            placeholder="https://drive.google.com/file/d/…"
-            aria-label="Public Google Drive file link"
-          />
-        </label>
-        <div>
-          <button type="button" onClick={() => { void importPublicDriveLink(); }} disabled={importing || !driveLink.trim() || !!driveLinkSetupMessage}>
-            <Link2 size={13}/> Import link
-          </button>
-          <button type="button" onClick={() => { void importFromGoogleDrive(); }} disabled={importing || !drivePickerReady || !!drivePickerSetupMessage}>
-            <Cloud size={13}/> {drivePickerSetupMessage ? "Drive not configured" : drivePickerReady ? "Choose from Drive" : "Loading Drive…"}
-          </button>
-        </div>
-        {drivePickerError && <p role="status">{drivePickerError}</p>}
-      </div>
-
       <p className="cp-template-upload-help">
-        Every PDF page is saved as a separate template. Artwork stays a movable image layer; add editable text and attributes on top. Public Drive links must be shared with anyone who has the link.
+        Every PDF page is saved as a separate template. Artwork stays a movable image layer; add editable text and attributes on top.
       </p>
 
       {notice && <p className="cp-template-notice" role="status">{notice}</p>}
@@ -617,7 +533,6 @@ export default function TemplatesPanel({ design, backgroundImage = "", onApply }
         onClose={() => setLibraryOpen(false)}
         onSelect={applyTemplate}
         onImportFile={() => uploadInput.current?.click()}
-        onImportDrive={() => { void importFromGoogleDrive(); }}
         onDeleteCustom={item => {
           if (window.confirm(`Delete custom template "${item.name}"?`)) removeCustom(item);
         }}
