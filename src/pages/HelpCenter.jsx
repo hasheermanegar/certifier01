@@ -146,7 +146,7 @@ export default function HelpCenter() {
       </div>
 
       <div style={{
-        background: "linear-gradient(120deg,#203c91,#315eea)",
+        background: "linear-gradient(135deg,#2F7D57,#1A4D2E)",
         borderRadius: 14,
         padding: "32px 24px",
         color: "white",
@@ -179,7 +179,7 @@ export default function HelpCenter() {
         <div className="table-wrap" style={{ padding: 26 }}>
           <button
             onClick={() => setActive(null)}
-            style={{ border: 0, background: "transparent", color: "#315eea", cursor: "pointer", fontWeight: 600, padding: 0 }}
+            style={{ border: 0, background: "transparent", color: "#1A4D2E", cursor: "pointer", fontWeight: 600, padding: 0 }}
           >
             ← Back to articles
           </button>
@@ -200,8 +200,8 @@ export default function HelpCenter() {
                 style={{
                   padding: "9px 14px",
                   borderRadius: 20,
-                  border: category === c ? "1px solid #315eea" : "1px solid #e1e6ef",
-                  background: category === c ? "#315eea" : "white",
+                  border: category === c ? "1px solid #1A4D2E" : "1px solid #D1E6D9",
+                  background: category === c ? "#1A4D2E" : "white",
                   color: category === c ? "white" : "#52617a",
                   cursor: "pointer",
                   fontSize: 13,
@@ -214,10 +214,10 @@ export default function HelpCenter() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 16 }}>
             {filtered.map(article => (
               <button key={article.title} onClick={() => setActive(article)} style={cardStyle}>
-                <small style={{ color: "#315eea", fontWeight: 600 }}>{article.category}</small>
+                <small style={{ color: "#1A4D2E", fontWeight: 600 }}>{article.category}</small>
                 <h3 style={{ fontSize: 16, margin: "12px 0 7px" }}>{article.title}</h3>
                 <p style={{ fontSize: 13, lineHeight: 1.6, color: "#8290a7", margin: 0 }}>{article.description}</p>
-                <div style={{ marginTop: 16, color: "#315eea", fontSize: 13, fontWeight: 600 }}>Read guide →</div>
+                <div style={{ marginTop: 16, color: "#1A4D2E", fontSize: 13, fontWeight: 600 }}>Read guide →</div>
               </button>
             ))}
           </div>
@@ -226,7 +226,7 @@ export default function HelpCenter() {
             <div className="table-wrap" style={{ padding: 35, textAlign: "center" }}>
               <h3>No articles found</h3>
               <p style={{ color: "#8290a7" }}>Try another search or choose a different category.</p>
-              <button onClick={() => { setSearch(""); setCategory("All articles"); }} style={{ color: "#315eea", background: "transparent", border: 0, cursor: "pointer" }}>Clear filters</button>
+              <button onClick={() => { setSearch(""); setCategory("All articles"); }} style={{ color: "#1A4D2E", background: "transparent", border: 0, cursor: "pointer" }}>Clear filters</button>
             </div>
           )}
         </>

@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState} from "react";
 import {Rnd} from "react-rnd";
 import {QRCodeSVG} from "qrcode.react";
+import {Eye, icons, Printer, X} from "lucide-react";
 import ToolRail from "./ToolRail";
 import TemplatesPanel from "./TemplatesPanel";
 import ElementsPanel from "./ElementsPanel";
@@ -17,7 +18,6 @@ function templateElements(p, portrait) {
   const cx=w/2;
   const titleY=portrait?220:155;
   return [
-    {id:id(),type:"text",text:"✦",x:cx-30,y:portrait?100:65,width:60,height:45,fontSize:30,color:p.accent,align:"center"},
     {id:id(),type:"text",text:p.title,x:80,y:titleY,width:w-160,height:75,fontSize:portrait?27:34,color:p.accent,bold:true,align:"center"},
     {id:id(),type:"text",text:p.subtitle,x:100,y:titleY+95,width:w-200,height:45,fontSize:19,color:"#64748b",align:"center"},
     {id:id(),type:"attribute",text:"{{recipient_name}}",x:100,y:titleY+175,width:w-200,height:85,fontSize:portrait?34:42,color:p.accent,bold:true,align:"center"},
@@ -25,6 +25,50 @@ function templateElements(p, portrait) {
     {id:id(),type:"attribute",text:"{{issue_date}}",x:cx-160,y:h-145,width:320,height:35,fontSize:15,color:"#64748b",align:"center"},
     {id:id(),type:"text",text:"AUTHORISED SIGNATURE",x:cx-120,y:h-85,width:240,height:30,fontSize:12,color:"#64748b",align:"center"}
   ];
+}
+
+function ShapeElement({ element: e }) {
+  const stroke = e.stroke || "#1A4D2E";
+  const lineWidth = Math.max(1, e.strokeWidth || 3);
+  const Icon = e.iconName && icons[e.iconName];
+
+  if (Icon) {
+    return <Icon className="cp-canvas-element-icon cp-canvas-outline-icon" width="100%" height="100%" color={stroke} strokeWidth={lineWidth} fill="none" style={{ opacity: e.opacity ?? 1 }} />;
+  }
+
+  if (e.shape === "hline") {
+    return <svg className="cp-canvas-element-icon" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ width: "100%", height: "100%", opacity: e.opacity ?? 1 }}><path d="M 0 50 H 100" fill="none" stroke={stroke} strokeWidth={lineWidth} /></svg>;
+  }
+  if (e.shape === "vline") {
+    return <svg className="cp-canvas-element-icon" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ width: "100%", height: "100%", opacity: e.opacity ?? 1 }}><path d="M 50 0 V 100" fill="none" stroke={stroke} strokeWidth={lineWidth} /></svg>;
+  }
+  if (e.shape === "dashed") {
+    return <svg className="cp-canvas-element-icon" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ width: "100%", height: "100%", opacity: e.opacity ?? 1 }}><path d="M 0 50 H 100" fill="none" stroke={stroke} strokeWidth={lineWidth} strokeDasharray="8 6" /></svg>;
+  }
+
+  const fill = e.fill && e.fill !== "transparent" ? e.fill : "none";
+  const common = { fill, stroke, strokeWidth: lineWidth, opacity: e.opacity ?? 1 };
+  const starPoints = "50,3 61,36 96,36 68,57 79,91 50,71 21,91 32,57 4,36 39,36";
+  const burstPoints = "50,2 61,28 84,12 77,39 98,50 77,61 84,88 61,72 50,98 39,72 16,88 23,61 2,50 23,39 16,12 39,28";
+
+  return (
+    <svg className="cp-canvas-element-icon" viewBox="0 0 100 100" preserveAspectRatio="none" style={{ width: "100%", height: "100%", overflow: "visible" }}>
+      {e.shape === "circle" ? <circle {...common} cx="50" cy="50" r="46" /> :
+        e.shape === "oval" ? <ellipse {...common} cx="50" cy="50" rx="47" ry="43" /> :
+          e.shape === "rounded" ? <rect {...common} x="3" y="3" width="94" height="94" rx="14" /> :
+            e.shape === "pill" ? <rect {...common} x="3" y="20" width="94" height="60" rx="30" /> :
+              e.shape === "triangle" ? <polygon {...common} points="50,4 97,96 3,96" /> :
+                e.shape === "star" ? <polygon {...common} points={starPoints} /> :
+                  e.shape === "diamond" ? <polygon {...common} points="50,3 97,50 50,97 3,50" /> :
+                    e.shape === "hexagon" ? <polygon {...common} points="25,3 75,3 97,50 75,97 25,97 3,50" /> :
+                      e.shape === "pentagon" ? <polygon {...common} points="50,3 97,38 80,97 20,97 3,38" /> :
+                        e.shape === "heart" ? <path {...common} d="M50 94 8 49C-7 29 8 5 29 5c10 0 17 5 21 14C54 10 61 5 71 5c21 0 36 24 21 44Z" /> :
+                          e.shape === "burst" ? <polygon {...common} points={burstPoints} /> :
+                            e.shape === "border" ? <><rect {...common} x="3" y="3" width="94" height="94" fill="none" strokeWidth={lineWidth * 2} /><rect {...common} x="10" y="10" width="80" height="80" fill="none" /></> :
+                              e.shape === "corner" ? <path {...common} d="M4 96V4h92M14 96V14h82" fill="none" strokeWidth={lineWidth * 2} /> :
+                                <rect {...common} x="3" y="3" width="94" height="94" />}
+    </svg>
+  );
 }
 
 export default function CertificateDesigner({design:initial,onSave,onClose}) {
@@ -51,6 +95,7 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
     redoStack.current.push(designRef.current);
     designRef.current=previous;
     D(previous);
+    setBackgroundImage(previous.backgroundImage || "");
     setHistoryCounts({undo:undoStack.current.length,redo:redoStack.current.length});
   };
 
@@ -60,6 +105,7 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
     undoStack.current.push(designRef.current);
     designRef.current=next;
     D(next);
+    setBackgroundImage(next.backgroundImage || "");
     setHistoryCounts({undo:undoStack.current.length,redo:redoStack.current.length});
   };
 
@@ -70,8 +116,28 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
   useEffect(()=>{selectedRef.current=selected;},[selected]);
   const [uploads,U]=useState([]);
   const [backgroundImage,setBackgroundImage]=useState(initial.backgroundImage || "");
+  const backgroundInput=useRef(null);
   const [msg,M]=useState("");
   const [previewImage,setPreviewImage]=useState("");
+  const [isPreviewing,setIsPreviewing]=useState(false);
+  const recipientElement=d.elements.find(e=>e.type==="attribute"&&String(e.text||"").includes("{{recipient_name}}"));
+  const credentialElement=d.elements.find(e=>e.type==="attribute"&&(
+    String(e.text||"").includes("{{credential_id}}")||
+    String(e.text||"").includes("{{certificate_uuid}}")
+  ));
+  const initialRecipient=recipientElement&&!recipientElement.text.includes("{{")
+    ?recipientElement.text
+    :"Recipient Name";
+  const initialCredentialId=credentialElement&&!credentialElement.text.includes("{{")
+    ?credentialElement.text
+    :"Certificate UUID";
+  const [previewRecipient,setPreviewRecipient]=useState(initialRecipient);
+  const [previewCredentialId,setPreviewCredentialId]=useState(initialCredentialId);
+  const [previewScale,setPreviewScale]=useState(.65);
+  const previewStageRef=useRef(null);
+  const previewButtonRef=useRef(null);
+  const previewCloseRef=useRef(null);
+  const previewDialogRef=useRef(null);
   const [zoom,Z]=useState(65);
   const [workspaceSize,WS]=useState({width:800,height:600});
   const workspaceRef=useRef(null);
@@ -86,6 +152,45 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
     observer.observe(el);
     return ()=>observer.disconnect();
   },[]);
+  useEffect(()=>{
+    if(!previewImage)return undefined;
+    const previewTrigger=previewButtonRef.current;
+    previewCloseRef.current?.focus();
+    const stage=previewStageRef.current;
+    const updatePreviewScale=()=>{
+      if(!stage)return;
+      const rect=stage.getBoundingClientRect();
+      setPreviewScale(Math.max(.05,Math.min((rect.width-56)/d.width,(rect.height-56)/d.height)));
+    };
+    updatePreviewScale();
+    const observer=new ResizeObserver(updatePreviewScale);
+    if(stage)observer.observe(stage);
+    const handlePreviewKeyDown=event=>{
+      if(event.key==="Escape"){
+        setPreviewImage("");
+        return;
+      }
+      if(event.key==="Tab"){
+        const buttons=previewDialogRef.current?.querySelectorAll("button:not(:disabled)");
+        if(!buttons?.length)return;
+        const first=buttons[0];
+        const last=buttons[buttons.length-1];
+        if(event.shiftKey&&document.activeElement===first){
+          event.preventDefault();
+          last.focus();
+        }else if(!event.shiftKey&&document.activeElement===last){
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    window.addEventListener("keydown",handlePreviewKeyDown);
+    return ()=>{
+      window.removeEventListener("keydown",handlePreviewKeyDown);
+      observer.disconnect();
+      if(previewTrigger?.isConnected)previewTrigger.focus();
+    };
+  },[previewImage,d.width,d.height]);
 
 ;
 
@@ -211,10 +316,46 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
     if(n<0)return x;const [v]=a.splice(n,1);a.splice(j,0,v);return{...x,elements:a};
   });
   const upload=async f=>{
+    if(!f)return;
+    if(!f.type.startsWith("image/")){M("Please choose an image file");return}
     if(f.size>8*1024*1024){M("Image must be under 8 MB");return}
-    const src=await new Promise((r,j)=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.onerror=j;fr.readAsDataURL(f)});
-    U(x=>[src,...x]);add("image","Image",{src,width:260,height:160});
+    try {
+      const src=await new Promise((r,j)=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.onerror=j;fr.readAsDataURL(f)});
+      const asset={id:id(),name:f.name||"Uploaded image",src};
+      U(x=>[asset,...x]);
+      add("image",asset.name,{src,width:260,height:160});
+    }catch(error){
+      console.error("Could not read uploaded image:",error);
+      M("Could not read uploaded image");
+    }
   };
+  const useUploadedImage=asset=>add("image",asset.name||"Image",{src:asset.src,width:260,height:160});
+  const uploadBackground = async file => {
+    if (!file) return;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      M("Use a PNG, JPG or WebP image");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      M("Background image must be under 8 MB");
+      return;
+    }
+    try {
+      const reader = new FileReader();
+      const dataUrl = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      updateDesign(x=>({...x,backgroundImage:dataUrl}));
+      setBackgroundImage(dataUrl);
+      M("Background image uploaded");
+    } catch {
+      M("Could not read the background image");
+    }
+    setTimeout(() => M(""), 2200);
+  };
+
   const change=v=>{
     if(v==="landscape"||v==="portrait"){
       updateDesign(x=>{
@@ -246,37 +387,92 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
       updateDesign(x=>({...x,background:v}));
     }
   };
+  const applyPageSize = preset => {
+    const sizes = {
+      A4: { landscape: [1123, 794], portrait: [794, 1123] },
+      "US Letter": { landscape: [1056, 816], portrait: [816, 1056] }
+    };
+    if (preset === "Custom") {
+      updateDesign(x => ({ ...x, pageSize: "Custom" }));
+      return;
+    }
+    const orientation = d.orientation === "portrait" ? "portrait" : "landscape";
+    const [newW, newH] = sizes[preset][orientation];
+    updateDesign(x => {
+      const oldW = x.width || newW;
+      const oldH = x.height || newH;
+      const sx = newW / oldW;
+      const sy = newH / oldH;
+      return {
+        ...x,
+        pageSize: preset,
+        width: newW,
+        height: newH,
+        elements: x.elements.map(e => ({
+          ...e,
+          x: Math.round((e.x || 0) * sx),
+          y: Math.round((e.y || 0) * sy),
+          width: Math.max(1, Math.round((e.width || 1) * sx)),
+          height: Math.max(1, Math.round((e.height || 1) * sy))
+        }))
+      };
+    });
+  };
+
   const applyTemplate=(p,orientation)=>{
     const selectedOrientation=p.orientation || orientation || "landscape";
     const portrait=selectedOrientation==="portrait";
     setBackgroundImage(p.backgroundImage || "");
-    updateDesign(x=>({...x,name:p.name || x.name,orientation:selectedOrientation,width:p.width || (portrait?790:1120),height:p.height || (portrait?1120:790),background:p.background || p.bg || "#ffffff",elements:Array.isArray(p.elements)&&p.elements.length>0?p.elements:templateElements(p,portrait)}));
+    updateDesign(x=>({...x,name:p.name || x.name,orientation:selectedOrientation,width:p.width || (portrait?790:1120),height:p.height || (portrait?1120:790),background:p.background || p.bg || "#ffffff",backgroundImage:p.backgroundImage || "",elements:Array.isArray(p.elements)&&p.elements.length>0?p.elements:templateElements(p,portrait)}));
     S(null);M((p.name || "Certificate")+" template applied");setTimeout(()=>M(""),1800);
   };
 
+  const getPreviewText=text=>{
+    const values={
+      "{{recipient_name}}":previewRecipient,
+      "{{recipient_email}}":previewRecipient==="Recipient Name"?"recipient@example.com":`${previewRecipient.toLowerCase().replace(/[^a-z0-9]+/g,".")}@example.com`,
+      "{{credential_title}}":d.name||"Untitled certificate",
+      "{{credential_id}}":previewCredentialId,
+      "{{certificate_uuid}}":previewCredentialId,
+      "{{issue_date}}":new Intl.DateTimeFormat("en-US",{month:"long",day:"numeric",year:"numeric"}).format(new Date()),
+      "{{expiry_date}}":"December 31, 2027",
+      "{{issuer_name}}":"Your Organisation"
+    };
+    return Object.entries(values).reduce(
+      (result,[placeholder,value])=>result.split(placeholder).join(value),
+      text||""
+    );
+  };
+
   const previewCertificate=async()=>{
-    try {
-      const { default: html2canvas } = await import("html2canvas");
-      M("Preparing preview...");
-      const imageCanvas=await html2canvas(canvas.current,{
-        scale:2,
-        backgroundColor:"#ffffff",
-        useCORS:true,
-        logging:false,
-        onclone:clonedDocument=>{
-          clonedDocument.querySelectorAll(".react-resizable-handle").forEach(el=>el.remove());
-          clonedDocument.querySelectorAll(".react-draggable").forEach(el=>{
-            el.style.border="none";
-            el.style.outline="none";
-          });
-        }
-      });
-      setPreviewImage(imageCanvas.toDataURL("image/png"));
-      M("");
-    } catch(error) {
-      console.error("Preview generation error:",error);
-      M("Preview failed to generate");
+    if(isPreviewing)return;
+    const recipientPlaceholder=d.elements.find(e=>String(e.text||"").includes("{{recipient_name}}"));
+    const credentialPlaceholder=d.elements.find(e=>(
+      String(e.text||"").includes("{{credential_id}}")||
+      String(e.text||"").includes("{{certificate_uuid}}")
+    ));
+    const staticRecipient=d.elements.find(e=>(
+      e.type==="attribute" &&
+      String(e.text||"").trim() &&
+      !String(e.text||"").includes("{{")
+    ));
+    if(recipientPlaceholder){
+      setPreviewRecipient(staticRecipient?.text||"Recipient Name");
     }
+    if(credentialPlaceholder&&!credentialPlaceholder.text.includes("{{")){
+      setPreviewCredentialId(credentialPlaceholder.text);
+    }else if(credentialPlaceholder){
+      setPreviewCredentialId("Certificate UUID");
+    }
+    setIsPreviewing(true);
+    setPreviewImage("live");
+    M("");
+    setIsPreviewing(false);
+  };
+
+  const updateLivePreviewField=(field,value)=>{
+    if(field==="recipient")setPreviewRecipient(value);
+    if(field==="credentialId")setPreviewCredentialId(value);
   };
 
   const exportPDF=async()=>{
@@ -294,12 +490,22 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
     setTimeout(()=>M(""),2500);
   };
   const panel=tool==="Templates"
-    ?<TemplatesPanel design={d} onChange={change} onApply={applyTemplate}/>
+    ?<TemplatesPanel design={d} backgroundImage={backgroundImage} onChange={change} onApply={applyTemplate}/>
     :tool==="Attributes"?<AttributesPanel onAdd={v=>add("attribute",v)}/>
     :tool==="Text"?<TextPanel onAdd={(v,style)=>add("text",v,style||{})}/>
-    :tool==="Uploads"?<UploadsPanel onUpload={upload} images={uploads}/>
+    :tool==="Uploads"?<UploadsPanel onUpload={upload} onUse={useUploadedImage} onRemove={assetId=>U(items=>items.filter(item=>item.id!==assetId))} images={uploads}/>
     :tool==="QR Codes"?<QRCodesPanel onAdd={(v,extra)=>add("qr",v,extra||{})}/>
-    :tool==="Layers"?<LayersPanel elements={d.elements} selected={selected} onSelect={S} onDelete={del} onMove={move}/>
+    :tool==="Layers"?<LayersPanel
+      elements={d.elements}
+      selected={selected}
+      onSelect={S}
+      onDelete={del}
+      onMove={move}
+      onVisibilityChange={(i,visible)=>patch(i,{hidden:!visible})}
+      onLockChange={(i,locked)=>patch(i,{locked})}
+      background={d.background}
+      backgroundImage={backgroundImage}
+    />
     :<ElementsPanel onAdd={add}/>;
 
   const fitScale=Math.max(0.01,Math.min((workspaceSize.width-60)/d.width,(workspaceSize.height-60)/d.height));
@@ -319,7 +525,18 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
         <span className="cp-zoom-label">{zoom}%</span>
         <button className="cp-top-button" onClick={()=>Z(Math.min(150,zoom+10))}>＋</button>
         <button className="cp-top-button" onClick={()=>Z(100)}>Fit</button>
-        <button className="cp-top-button cp-preview-button" onClick={previewCertificate}>◉ Preview</button>
+        <button
+          ref={previewButtonRef}
+          type="button"
+          className="cp-top-button cp-preview-button"
+          onClick={previewCertificate}
+          disabled={isPreviewing}
+          aria-busy={isPreviewing}
+          title="Preview certificate"
+        >
+          {isPreviewing ? <span className="cp-preview-spinner" aria-hidden="true"/> : <Eye size={14}/>}
+          {isPreviewing ? "Preparing…" : "Preview"}
+        </button>
         <button className="btn-secondary" onClick={exportPDF}>↓ Export PDF</button>
         <button className="btn-primary" onClick={()=>{onSave({...d,backgroundImage});M("Design saved");setTimeout(()=>M(""),1800)}}>Save design</button>
       </div>
@@ -367,7 +584,7 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
           <div className="cp-canvas-scroll" ref={workspaceRef} onMouseDown={e=>{if(!e.target.closest(".react-rnd"))S(null)}}>
             <div className="cp-canvas-frame" style={{width:d.width*scale,height:d.height*scale}}>
               <div ref={canvas} className="certificate-canvas cp-certificate-canvas" style={{width:d.width,height:d.height,background:d.background,backgroundImage:backgroundImage?`url("${backgroundImage}")`:undefined,backgroundSize:"100% 100%",backgroundPosition:"center",backgroundRepeat:"no-repeat",transform:"scale("+scale+")",transformOrigin:"top left"}}>
-                {d.elements.map(e=><Rnd key={e.id} bounds="parent" scale={scale} enableResizing={selected===e.id ? {
+                {d.elements.filter(e=>!e.hidden).map(e=><Rnd key={e.id} bounds="parent" scale={scale} enableResizing={selected===e.id && !e.locked ? {
       top:true,
       right:true,
       bottom:true,
@@ -378,14 +595,14 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
       topLeft:true
     } : false}
     resizeHandleStyles={{
-      top:{width:10,height:10,background:"#ffffff",border:"2px solid #315eea",borderRadius:"50%",top:-5},
-      right:{width:10,height:10,background:"#ffffff",border:"2px solid #315eea",borderRadius:"50%",right:-5},
-      bottom:{width:10,height:10,background:"#ffffff",border:"2px solid #315eea",borderRadius:"50%",bottom:-5},
-      left:{width:10,height:10,background:"#ffffff",border:"2px solid #315eea",borderRadius:"50%",left:-5},
-      topRight:{width:10,height:10,background:"#ffffff",border:"2px solid #315eea",borderRadius:"50%",right:-5,top:-5},
-      bottomRight:{width:10,height:10,background:"#ffffff",border:"2px solid #315eea",borderRadius:"50%",right:-5,bottom:-5},
-      bottomLeft:{width:10,height:10,background:"#ffffff",border:"2px solid #315eea",borderRadius:"50%",left:-5,bottom:-5},
-      topLeft:{width:10,height:10,background:"#ffffff",border:"2px solid #315eea",borderRadius:"50%",left:-5,top:-5}
+      top:{width:10,height:10,background:"#ffffff",border:"2px solid #1A4D2E",borderRadius:"50%",top:0,left:"50%",marginLeft:-5},
+      right:{width:10,height:10,background:"#ffffff",border:"2px solid #1A4D2E",borderRadius:"50%",right:0,top:"50%",marginTop:-5},
+      bottom:{width:10,height:10,background:"#ffffff",border:"2px solid #1A4D2E",borderRadius:"50%",bottom:0,left:"50%",marginLeft:-5},
+      left:{width:10,height:10,background:"#ffffff",border:"2px solid #1A4D2E",borderRadius:"50%",left:0,top:"50%",marginTop:-5},
+      topRight:{width:10,height:10,background:"#ffffff",border:"2px solid #1A4D2E",borderRadius:"50%",right:0,top:0},
+      bottomRight:{width:10,height:10,background:"#ffffff",border:"2px solid #1A4D2E",borderRadius:"50%",right:0,bottom:0},
+      bottomLeft:{width:10,height:10,background:"#ffffff",border:"2px solid #1A4D2E",borderRadius:"50%",left:0,bottom:0},
+      topLeft:{width:10,height:10,background:"#ffffff",border:"2px solid #1A4D2E",borderRadius:"50%",left:0,top:0}
     }}
     resizeHandleClasses={{
       top:"cp-resize-handle",
@@ -396,9 +613,13 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
       bottomRight:"cp-resize-handle",
       bottomLeft:"cp-resize-handle",
       topLeft:"cp-resize-handle"
-    }} size={{width:e.width,height:e.height}} position={{x:e.x,y:e.y}} onDragStop={(ev,p)=>{const moved=Math.abs(p.x-e.x)+Math.abs(p.y-e.y);if(moved>4)patch(e.id,{x:p.x,y:p.y});}} onResizeStop={(ev,dir,ref,delta,p)=>patch(e.id,{width:parseInt(ref.style.width),height:parseInt(ref.style.height),x:p.x,y:p.y})} onMouseDown={()=>S(e.id)} style={{border:selected===e.id?"1px dashed #315eea":"1px solid transparent",zIndex:selected===e.id?3:1}}>
-                  <div onClick={()=>S(e.id)} style={{height:"100%",width:"100%",display:"flex",alignItems:"center",justifyContent:e.align==="left"?"flex-start":e.align==="right"?"flex-end":"center",fontSize:e.fontSize,fontFamily:e.fontFamily||"Inter",fontWeight:e.bold?700:400,fontStyle:e.italic?"italic":"normal",textDecoration:e.underline?"underline":"none",letterSpacing:(e.letterSpacing||0)+"px",lineHeight:e.lineHeight||1.2,textTransform:e.textTransform||"none",color:e.color,textAlign:e.align,overflow:"hidden",whiteSpace:"pre-wrap",padding:3}}>
-                    {e.type==="qr"?<QRCodeSVG value={e.qrMode==="automatic"?"https://certifypro.in/verify/PREVIEW-CREDENTIAL":(e.text||"https://example.com")} size={Math.max(40,Math.min(e.width,e.height)-5)}/>:e.type==="image"?<img src={e.src} alt="" style={{width:"100%",height:"100%",objectFit:"contain"}}/>:e.type==="shape"?<div style={{width:"100%",height:"100%",boxSizing:"border-box",background:e.fill||"transparent",border:e.shape==="border"?"8px double "+(e.stroke||"#c5a45c"):e.shape==="corner"?"4px solid "+(e.stroke||"#c5a45c"):e.strokeWidth?e.strokeWidth+"px "+(e.shape==="dashed"?"dashed":"solid")+" "+(e.stroke||"#315eea"):"none",borderRadius:e.shape==="circle"?"50%":e.shape==="rounded"?"14px":0,clipPath:e.shape==="triangle"?"polygon(50% 0, 0 100%, 100% 100%)":e.shape==="star"?"polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)":e.shape==="diamond"?"polygon(50% 0,100% 50%,50% 100%,0 50%)":e.shape==="corner"?"polygon(0 0,100% 0,100% 15%,15% 15%,15% 100%,0 100%)":"none",opacity:e.opacity??1}}/>:e.text}
+    }} disableDragging={!!e.locked} size={{width:e.width,height:e.height}} position={{x:e.x,y:e.y}} onDragStop={(ev,p)=>{const moved=Math.abs(p.x-e.x)+Math.abs(p.y-e.y);if(moved>4)patch(e.id,{x:p.x,y:p.y});}} onResizeStop={(ev,dir,ref,delta,p)=>patch(e.id,{width:parseInt(ref.style.width),height:parseInt(ref.style.height),x:p.x,y:p.y})} onMouseDown={()=>S(e.id)} style={{border:selected===e.id?"1px dashed #1A4D2E":"1px solid transparent",zIndex:selected===e.id?3:1}}>
+                  <div
+                    onClick={()=>S(e.id)}
+                    data-certificate-text={e.text||""}
+                    style={{height:"100%",width:"100%",display:"flex",alignItems:"center",justifyContent:e.align==="left"?"flex-start":e.align==="right"?"flex-end":"center",fontSize:e.fontSize,fontFamily:e.fontFamily||"Inter",fontWeight:e.bold?700:400,fontStyle:e.italic?"italic":"normal",textDecoration:e.underline?"underline":"none",letterSpacing:(e.letterSpacing||0)+"px",lineHeight:e.lineHeight||1.2,textTransform:e.textTransform||"none",color:e.color,textAlign:e.align,overflow:"hidden",whiteSpace:"pre-wrap",padding:3}}
+                  >
+                    {e.type==="qr"?<QRCodeSVG value={e.qrMode==="automatic"?`https://certifypro.in/verify/${encodeURIComponent(previewCredentialId||"PREVIEW-CREDENTIAL")}`:(e.text||"https://example.com")} size={Math.max(40,Math.min(e.width,e.height)-5)}/>:e.type==="image"?<img src={e.src} alt="" style={{width:"100%",height:"100%",objectFit:"contain"}}/>:e.type==="shape"?<ShapeElement element={e}/>:e.text}
                   </div>
                 </Rnd>)}
               </div>
@@ -470,11 +691,21 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
           {cur.type === "shape" ? (
             <section className="cp-props-section">
               <div className="cp-props-section-title"><strong>Shape appearance</strong></div>
-              <label className="cp-props-field">Fill colour
-                <input type="color" value={cur.fill || "#ffffff"} onChange={e=>patch(cur.id,{fill:e.target.value})}/>
-              </label>
+              {!cur.iconName && <>
+                <button
+                  type="button"
+                  className="cp-shape-hollow-toggle"
+                  aria-pressed={!cur.fill || cur.fill === "transparent"}
+                  onClick={()=>patch(cur.id,{fill:!cur.fill || cur.fill === "transparent" ? "#ffffff" : "transparent"})}
+                >
+                  {!cur.fill || cur.fill === "transparent" ? "Add fill" : "Make hollow"}
+                </button>
+                <label className="cp-props-field">Fill colour
+                  <input type="color" disabled={!cur.fill || cur.fill === "transparent"} value={cur.fill || "#ffffff"} onChange={e=>patch(cur.id,{fill:e.target.value})}/>
+                </label>
+              </>}
               <label className="cp-props-field">Border colour
-                <input type="color" value={cur.stroke || "#315eea"} onChange={e=>patch(cur.id,{stroke:e.target.value})}/>
+                <input type="color" value={cur.stroke || "#1A4D2E"} onChange={e=>patch(cur.id,{stroke:e.target.value})}/>
               </label>
               <label className="cp-props-field">Border width
                 <input type="number" min="0" max="30" value={cur.strokeWidth || 0} onChange={e=>patch(cur.id,{strokeWidth:+e.target.value})}/>
@@ -550,6 +781,51 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
           <label className="cp-props-field">Canvas background
             <input type="color" value={/^#[0-9a-f]{6}$/i.test(d.background) ? d.background : "#ffffff"} onChange={e=>updateDesign(x=>({...x,background:e.target.value}))}/>
           </label>
+          <div className="cp-props-field cp-background-field">
+            <span>Background image</span>
+            <div className="cp-background-control">
+              {backgroundImage ? (
+                <div className="cp-background-preview">
+                  <img src={backgroundImage} alt="Certificate background preview"/>
+                  <div className="cp-background-preview-info">
+                    <strong>Background image</strong>
+                    <small>Custom image applied</small>
+                  </div>
+                  <button
+                    type="button"
+                    className="cp-background-remove"
+                    title="Remove background image"
+                    aria-label="Remove background image"
+                    onClick={()=>{updateDesign(x=>({...x,backgroundImage:""}));setBackgroundImage("");M("Background image removed");setTimeout(()=>M(""),1800);}}
+                  >×</button>
+                </div>
+              ) : (
+                <button type="button" className="cp-background-empty" onClick={()=>backgroundInput.current?.click()}>
+                  <span className="cp-background-empty-icon">＋</span>
+                  <span><strong>Add background image</strong><small>PNG, JPG or WebP · Up to 8 MB</small></span>
+                </button>
+              )}
+              {backgroundImage && (
+                <button type="button" className="cp-background-change" onClick={()=>backgroundInput.current?.click()}>
+                  Change image
+                </button>
+              )}
+            </div>
+            <input
+              ref={backgroundInput}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              style={{display:"none"}}
+              onChange={e=>{uploadBackground(e.target.files?.[0]);e.target.value="";}}
+            />
+          </div>
+          <label className="cp-props-field">Page size
+            <select value={d.pageSize || "Custom"} onChange={e=>applyPageSize(e.target.value)}>
+              <option value="A4">A4</option>
+              <option value="US Letter">US Letter</option>
+              <option value="Custom">Custom dimensions</option>
+            </select>
+          </label>
           <div className="cp-props-canvas-meta">
             <span>Canvas dimensions</span>
             <strong>{d.width} × {d.height} px</strong>
@@ -558,19 +834,140 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
       </aside>
     </div>
     {previewImage && (
-      <div className="certify-preview-overlay" onClick={()=>setPreviewImage("")}>
-        <div className="certify-preview-modal" onClick={e=>e.stopPropagation()}>
+      <div
+        className="certify-preview-overlay"
+        onMouseDown={event=>{
+          if(event.target===event.currentTarget)setPreviewImage("");
+        }}
+      >
+        <section
+          ref={previewDialogRef}
+          className="certify-preview-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="certify-preview-title"
+          aria-describedby="certify-preview-description"
+        >
           <div className="certify-preview-toolbar">
-            <strong>Certificate Preview</strong>
+            <div className="certify-preview-heading">
+              <span>CREDENTIAL PREVIEW</span>
+              <strong id="certify-preview-title">Preview your credential design</strong>
+              <small id="certify-preview-description">See how real data populates the dynamic attribute placeholders.</small>
+            </div>
             <div className="certify-preview-buttons">
-              <button type="button" onClick={()=>window.print()}>Print / Save PDF</button>
-              <button type="button" className="certify-preview-close" onClick={()=>setPreviewImage("")}>Close Preview ✕</button>
+              <button type="button" className="certify-preview-print" onClick={()=>window.print()}>
+                <Printer size={15}/> Print / Save PDF
+              </button>
+              <button
+                ref={previewCloseRef}
+                type="button"
+                className="certify-preview-close"
+                onClick={()=>setPreviewImage("")}
+                aria-label="Close preview"
+                title="Close preview"
+              >
+                <X size={17}/>
+              </button>
             </div>
           </div>
-          <div className="certify-preview-stage">
-            <img src={previewImage} alt="Certificate preview" />
+          <div className="certify-preview-workspace">
+            <aside className="certify-preview-data">
+              <div className="certify-preview-data-heading">
+                <strong>Preview data</strong>
+                <span>Sample values</span>
+              </div>
+              <label>
+                <span>Recipient Name</span>
+                <input
+                  value={previewRecipient}
+                  onChange={event=>updateLivePreviewField("recipient",event.target.value)}
+                  placeholder="Recipient Name"
+                />
+              </label>
+              <label>
+                <span>Certificate UUID</span>
+                <input
+                  value={previewCredentialId}
+                  onChange={event=>updateLivePreviewField("credentialId",event.target.value)}
+                  placeholder="Certificate UUID"
+                />
+              </label>
+              <div className="certify-preview-live-status"><span/> Preview updates automatically</div>
+              <p>Only preview values are changed. Your design attributes and canvas remain unchanged.</p>
+            </aside>
+            <div ref={previewStageRef} className="certify-preview-stage">
+              <div
+                className="certify-preview-canvas-frame"
+                style={{width:d.width*previewScale,height:d.height*previewScale}}
+              >
+                <div
+                  className="certify-preview-canvas"
+                  style={{
+                    width:d.width,
+                    height:d.height,
+                    background:d.background,
+                    backgroundImage:backgroundImage?`url("${backgroundImage}")`:undefined,
+                    backgroundSize:"100% 100%",
+                    backgroundPosition:"center",
+                    backgroundRepeat:"no-repeat",
+                    transform:`scale(${previewScale})`,
+                    transformOrigin:"top left"
+                  }}
+                >
+                  {d.elements.filter(e=>!e.hidden).map(e=>(
+                    <div
+                      key={e.id}
+                      className="certify-preview-element"
+                      style={{
+                        left:e.x,
+                        top:e.y,
+                        width:e.width,
+                        height:e.height,
+                        zIndex:e.type==="qr"?2:1
+                      }}
+                    >
+                      {e.type==="qr"?(
+                        <QRCodeSVG
+                          value={e.qrMode==="automatic"?`https://certifypro.in/verify/${encodeURIComponent(previewCredentialId||"PREVIEW-CREDENTIAL")}`:(e.text||"https://example.com")}
+                          size={Math.max(40,Math.min(e.width,e.height)-5)}
+                        />
+                      ):e.type==="image"?(
+                        <img src={e.src} alt="" style={{width:"100%",height:"100%",objectFit:"contain"}}/>
+                      ):e.type==="shape"?(
+                        <ShapeElement element={e}/>
+                      ):(
+                        <div style={{
+                          height:"100%",
+                          width:"100%",
+                          display:"flex",
+                          alignItems:"center",
+                          justifyContent:e.align==="left"?"flex-start":e.align==="right"?"flex-end":"center",
+                          fontSize:e.fontSize,
+                          fontFamily:e.fontFamily||"Inter",
+                          fontWeight:e.bold?700:400,
+                          fontStyle:e.italic?"italic":"normal",
+                          textDecoration:e.underline?"underline":"none",
+                          letterSpacing:(e.letterSpacing||0)+"px",
+                          lineHeight:e.lineHeight||1.2,
+                          textTransform:e.textTransform||"none",
+                          color:e.color,
+                          textAlign:e.align,
+                          overflow:"hidden",
+                          whiteSpace:"pre-wrap",
+                          padding:3
+                        }}>{getPreviewText(e.text)}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+          <footer className="certify-preview-footer">
+            <span>Preview at certificate proportions</span>
+            <span>{d.orientation==="portrait"?"Portrait":"Landscape"} · {d.width} × {d.height}</span>
+          </footer>
+        </section>
       </div>
     )}
     {msg&&<div className="toast">{msg}</div>}

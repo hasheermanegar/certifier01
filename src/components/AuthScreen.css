@@ -29,3 +29,76 @@
 .auth-success{background:#effaf3;color:#187344;border:1px solid #c8eed7}
 .auth-mobile-brand{display:none}
 @media(max-width:760px){.auth-screen{grid-template-columns:1fr}.auth-brand-panel{display:none}.auth-form-panel{min-height:100vh;padding:32px 22px}.auth-mobile-brand{display:flex;align-items:center;gap:10px;font:800 19px Manrope,sans-serif;margin-bottom:45px}.auth-form-wrap h2{font-size:25px}.auth-security{margin-top:35px}}
+
+/* Vistara Vidyaanidhi auth theme */
+.auth-screen {
+  background: #F8FCF9;
+  color: #0D1B12;
+  font-family: "Public Sans", Inter, sans-serif;
+}
+
+.auth-brand-panel {
+  background: linear-gradient(135deg, #2F7D57, #1A4D2E);
+  box-shadow: none;
+}
+
+.auth-brand-mark {
+  border-radius: 8px;
+  background: #FFFFFF;
+  color: #1A4D2E;
+  font-family: "Merriweather", Georgia, serif;
+  box-shadow: none;
+}
+
+.auth-brand-copy h1,
+.auth-form-wrap h2 {
+  color: #0D1B12;
+  font-family: "Merriweather", Georgia, serif;
+}
+
+.auth-brand-panel .auth-brand-copy h1,
+.auth-brand-panel .auth-brand-copy p,
+.auth-brand-panel .auth-brand-footer {
+  color: #FFFFFF;
+}
+
+.auth-eyebrow,
+.auth-brand-panel .auth-eyebrow,
+.auth-switch button {
+  color: #1A4D2E;
+}
+
+.auth-subtitle,
+.auth-form label,
+.auth-optional,
+.auth-switch,
+.auth-security {
+  color: #4C9A66;
+}
+
+.auth-form input {
+  border-color: #D1E6D9;
+  border-radius: 6px;
+  color: #0D1B12;
+  box-shadow: none;
+}
+
+.auth-form input:focus {
+  border-color: #4C9A66;
+  box-shadow: 0 0 0 3px rgba(17, 212, 82, .10);
+}
+
+.auth-submit,
+.auth-switch button.auth-submit {
+  border: 1px solid #1A4D2E;
+  border-radius: 6px;
+  background: #1A4D2E;
+  color: #FFFFFF;
+  box-shadow: none;
+}
+
+.auth-submit:hover {
+  border-color: #2F7D57;
+  background: #2F7D57;
+  box-shadow: none;
+}

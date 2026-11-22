@@ -76,9 +76,9 @@ export default function BulkIssuing({
   const invalidRows = checkedRows.filter(r => !r.valid);
 
   const styles = {
-    card: { background: "#fff", border: "1px solid #e4eaf2", borderRadius: 12, padding: 20 },
-    button: { border: 0, borderRadius: 8, padding: "11px 16px", background: "#315eea", color: "#fff", fontWeight: 650, cursor: "pointer" },
-    secondary: { border: "1px solid #dce3ed", borderRadius: 8, padding: "10px 15px", background: "#fff", color: "#34435e", cursor: "pointer" },
+    card: { background: "#fff", border: "1px solid #D1E6D9", borderRadius: 8, padding: 20, boxShadow: "none" },
+    button: { border: "1px solid #1A4D2E", borderRadius: 6, padding: "11px 16px", background: "#1A4D2E", color: "#fff", fontWeight: 650, cursor: "pointer", boxShadow: "none" },
+    secondary: { border: "1px solid #D1E6D9", borderRadius: 6, padding: "10px 15px", background: "#fff", color: "#1A4D2E", cursor: "pointer", boxShadow: "none" },
     input: { width: "100%", padding: 11, border: "1px solid #dce3ed", borderRadius: 8, boxSizing: "border-box", marginTop: 7 }
   };
 
@@ -225,7 +225,7 @@ export default function BulkIssuing({
   };
 
   return (
-    <div className="page-content" style={{ padding: 30, background: "#f6f8fc", minHeight: "100%" }}>
+    <div className="page-content cp-bulk-page" style={{ padding: 30, background: "#F8FCF9", minHeight: "100%" }}>
       <div style={{ marginBottom: 25 }}>
         <small style={{ color: "#8492aa", letterSpacing: 1.5, fontWeight: 700 }}>CREDENTIAL MANAGEMENT</small>
         <h1 style={{ margin: "8px 0", color: "#1d2b45" }}>Bulk issuing</h1>
@@ -253,10 +253,10 @@ export default function BulkIssuing({
             <div style={{ fontSize: 32 }}>⇧</div>
             <strong style={{ display: "block", margin: "10px 0", color: "#34435e" }}>Choose your CSV file</strong>
             <p style={{ color: "#8290a7", fontSize: 12 }}>Excel (.xlsx, .xls) and CSV files</p>
-            <button type="button" style={styles.button} onClick={(e) => { e.preventDefault(); e.stopPropagation(); fileRef.current?.click(); }}>Upload Excel / CSV</button>
+            <button type="button" className="cp-bulk-primary" style={styles.button} onClick={(e) => { e.preventDefault(); e.stopPropagation(); fileRef.current?.click(); }}>Upload Excel / CSV</button>
             <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden onChange={loadFile} />
           </div>
-          <button style={{ ...styles.secondary, width: "100%", marginTop: 12 }} onClick={downloadSample}>↓ Download sample Excel file</button>
+          <button className="cp-bulk-secondary" style={{ ...styles.secondary, width: "100%", marginTop: 12 }} onClick={downloadSample}>↓ Download sample Excel file</button>
         </section>
 
         <section style={styles.card}>
@@ -275,7 +275,7 @@ export default function BulkIssuing({
           <p style={{ fontSize: 12, color: "#8290a7", lineHeight: 1.6 }}>
             A title provided in the CSV takes priority over this default title. The selected design is attached to each created credential record.
           </p>
-          <button style={{ ...styles.button, width: "100%", marginTop: 12 }} disabled={!validRows.length || !selectedTemplate?.backendId || issuing} onClick={issue}>
+          <button className="cp-bulk-primary" style={{ ...styles.button, width: "100%", marginTop: 12 }} disabled={!validRows.length || !selectedTemplate?.backendId || issuing} onClick={issue}>
             {issuing ? "Issuing..." : `Issue ${validRows.length} certificate${validRows.length === 1 ? "" : "s"}`}
           </button>
         </section>
@@ -288,7 +288,7 @@ export default function BulkIssuing({
         <section style={{ ...styles.card, marginTop: 20 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <div><h3 style={{ margin: 0, color: "#24334d" }}>3. Review recipients</h3><p style={{ color: "#8290a7", fontSize: 13 }}>Invalid rows are skipped when issuing.</p></div>
-            <button style={styles.secondary} onClick={() => { setRows([]); setSuccess(""); setError(""); setReport(null); }}>Clear list</button>
+            <button className="cp-bulk-secondary" style={styles.secondary} onClick={() => { setRows([]); setSuccess(""); setError(""); setReport(null); }}>Clear list</button>
           </div>
           <div style={{ overflowX: "auto", marginTop: 12 }}>
             <table style={{ width: "100%", minWidth: 650, borderCollapse: "collapse", textAlign: "left" }}>
@@ -321,7 +321,7 @@ export default function BulkIssuing({
           <p style={{ color: "#16804d" }}>{report.issued.length} credential record(s) created.</p>
           <p style={{ color: "#8290a7" }}>{report.skipped.length} invalid or failed row(s) skipped.</p>
           {report.skipped.length > 0 && <ul style={{ color: "#b45309", fontSize: 13 }}>{report.skipped.map((row, index) => <li key={`${row.row}-${index}`}>Row {row.row}: {row.reason}</li>)}</ul>}
-          <button style={styles.secondary} onClick={() => {
+          <button className="cp-bulk-secondary" style={styles.secondary} onClick={() => {
             const csv = ["Name,Email,Credential,Status", ...report.issued.map(c => [c.recipient,c.email,c.title,c.status].map(v => `"${String(v).replace(/"/g,'""')}"`).join(","))].join("\n");
             const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
             const a = document.createElement("a"); a.href = url; a.download = "certifypro-issuing-report.csv"; a.click(); URL.revokeObjectURL(url);

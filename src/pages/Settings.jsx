@@ -5,7 +5,7 @@ const defaults = {
   email: "",
   website: "",
   description: "",
-  brandColor: "#315eea",
+  brandColor: "#1A4D2E",
   certificatePrefix: "CP",
   defaultValidity: "No expiry",
   timezone: "Asia/Kolkata",
@@ -48,7 +48,7 @@ function Toggle({ label, description, name, settings, update }) {
         type="checkbox"
         checked={settings[name]}
         onChange={e => update(name, e.target.checked)}
-        style={{ width: 19, height: 19, accentColor: "#315eea" }}
+        style={{ width: 19, height: 19, accentColor: "#1A4D2E" }}
       />
     </div>
   );
@@ -57,7 +57,11 @@ function Toggle({ label, description, name, settings, update }) {
 export default function Settings() {
   const [settings, setSettings] = useState(() => {
     try {
-      return { ...defaults, ...JSON.parse(localStorage.getItem("cp-settings") || "{}") };
+      return {
+        ...defaults,
+        ...JSON.parse(localStorage.getItem("cp-settings") || "{}"),
+        brandColor: "#1A4D2E"
+      };
     } catch {
       return defaults;
     }
@@ -152,9 +156,9 @@ export default function Settings() {
             />
             <div>
               <strong style={{ fontSize: 14 }}>Primary brand colour</strong>
-              <p style={{ color: "#8290a7", fontSize: 12, margin: "5px 0" }}>{settings.brandColor}</p>
+              <p style={{ color: "#4C9A66", fontSize: 12, margin: "5px 0" }}>{settings.brandColor}</p>
             </div>
-            <div style={{ background: settings.brandColor, color: "white", padding: "10px 18px", borderRadius: 8, fontSize: 13, marginLeft: "auto" }}>
+            <div style={{ background: "#1A4D2E", color: "white", padding: "10px 18px", borderRadius: 6, fontSize: 13, marginLeft: "auto", boxShadow: "none" }}>
               Brand preview
             </div>
           </div>
@@ -211,7 +215,7 @@ export default function Settings() {
           <button
             type="submit"
             style={{
-              background: "#315eea",
+              background: "#1A4D2E",
               color: "#ffffff",
               border: "none",
               borderRadius: 9,

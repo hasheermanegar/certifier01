@@ -113,19 +113,21 @@ export default function Recipients({
 
   const card = {
     background: "#fff",
-    border: "1px solid #e5eaf2",
-    borderRadius: 12,
-    padding: 20
+    border: "1px solid #D1E6D9",
+    borderRadius: 8,
+    padding: 20,
+    boxShadow: "none"
   };
 
   const button = {
-    border: 0,
-    borderRadius: 8,
+    border: "1px solid #1A4D2E",
+    borderRadius: 6,
     padding: "11px 16px",
-    background: "#315eea",
+    background: "#1A4D2E",
     color: "#fff",
     fontWeight: 600,
-    cursor: "pointer"
+    cursor: "pointer",
+    boxShadow: "none"
   };
 
   const input = {
@@ -138,7 +140,7 @@ export default function Recipients({
   };
 
   return (
-    <div className="page-content" style={{ padding: 30, background: "#f6f8fc", minHeight: "100%" }}>
+    <div className="page-content cp-recipients-page" style={{ padding: 30, background: "#F8FCF9", minHeight: "100%" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 15, flexWrap: "wrap", marginBottom: 25 }}>
         <div>
           <small style={{ color: "#8492aa", letterSpacing: 1.5, fontWeight: 700 }}>WORKSPACE MANAGEMENT</small>
@@ -192,7 +194,7 @@ export default function Recipients({
                 <tr key={r.id} style={{ borderTop: "1px solid #edf0f5" }}>
                   <td style={{ padding: 14 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#eaf0ff", color: "#315eea", display: "grid", placeItems: "center", fontWeight: 700 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 8, background: "#E7F3EB", color: "#1A4D2E", display: "grid", placeItems: "center", fontWeight: 700 }}>
                         {(r.name || "?").charAt(0).toUpperCase()}
                       </div>
                       <div>
@@ -203,7 +205,7 @@ export default function Recipients({
                   </td>
                   <td style={{ padding: 14, color: "#687891" }}>{r.organization || "—"}</td>
                   <td style={{ padding: 14 }}>
-                    <button onClick={() => setSelected(r)} style={{ border: 0, background: "#edf2ff", color: "#315eea", padding: "6px 10px", borderRadius: 15, cursor: "pointer" }}>
+                    <button onClick={() => setSelected(r)} style={{ border: 0, background: "#E7F3EB", color: "#1A4D2E", padding: "6px 10px", borderRadius: 999, cursor: "pointer" }}>
                       {recipientCredentials(r).length} issued
                     </button>
                   </td>
@@ -211,7 +213,7 @@ export default function Recipients({
                     {r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "—"}
                   </td>
                   <td style={{ padding: 14, whiteSpace: "nowrap" }}>
-                    <button onClick={() => openEdit(r)} style={{ border: 0, background: "transparent", color: "#315eea", cursor: "pointer", marginRight: 10 }}>Edit</button>
+                    <button onClick={() => openEdit(r)} style={{ border: 0, background: "transparent", color: "#1A4D2E", cursor: "pointer", marginRight: 10 }}>Edit</button>
                     <button onClick={() => {
                       if (window.confirm(`Delete ${r.name}? Their issued credentials will not be deleted.`)) onDelete(r.id);
                     }} style={{ border: 0, background: "transparent", color: "#d34d58", cursor: "pointer" }}>Delete</button>
