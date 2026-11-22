@@ -4541,10 +4541,31 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     padding: 15px !important;
   }
 
+  .cp-editor-panel.cp-mobile-open {
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    padding: 10px !important;
+  }
+
   .cp-properties.cp-mobile-open {
     left: auto !important;
     right: 10px !important;
     width: min(340px, calc(100vw - 78px)) !important;
+  }
+
+  .cp-upload-dropzone {
+    min-height: 145px;
+  }
+
+  .cp-asset-actions button {
+    min-height: 36px;
+    padding: 0 7px;
+    font-size: 10px;
+  }
+
+  .cp-asset-actions button.remove {
+    flex-basis: 36px;
   }
 
   .cp-mobile-drawer-backdrop {
@@ -4558,6 +4579,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
   .cp-workspace-toolbar-actions > button:not(.cp-mobile-panel-toggle) {
     display: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .cp-assets-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
