@@ -52,7 +52,8 @@ const issuedCertificateSchema = new mongoose.Schema(
       default: "valid"
     },
     expiresAt: { type: Date, default: null },
-    emailStatus: { type: String, enum: ["pending", "sent", "failed", "not_configured"], default: "not_configured" },
+    emailStatus: { type: String, enum: ["pending", "sending", "sent", "failed", "not_configured"], default: "not_configured" },
+    emailAttemptStartedAt: { type: Date, default: null },
     emailSentAt: { type: Date, default: null },
     issuedAt: {
       type: Date,
@@ -61,6 +62,8 @@ const issuedCertificateSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+issuedCertificateSchema.index({ emailStatus: 1, issuedAt: 1 });
 
 module.exports = mongoose.model(
   "IssuedCertificate",

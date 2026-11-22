@@ -119,6 +119,12 @@ export const api = {
       method: "POST",
     }),
 
+  getCertificateEmailStatuses: (certificateIds) =>
+    request("/issued-certificates/email-status", {
+      method: "POST",
+      body: JSON.stringify({ certificateIds }),
+    }),
+
   verifyCertificate: (certificateId) =>
     request(`/issued-certificates/verify/${encodeURIComponent(certificateId)}`),
 

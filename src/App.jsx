@@ -28,6 +28,7 @@ const uid=()=>crypto.randomUUID();const fresh=()=>({id:uid(),name:"Untitled cert
 const read=(k)=>{try{return JSON.parse(localStorage.getItem(k))||[]}catch{return[]}};
 const emailDeliveryMessage=(status,email,action="Certificate issued")=>{
   if(status==="sent")return `${action}; the email was sent to ${email}.`;
+  if(status==="pending"||status==="sending")return `${action}; the email is queued and will be sent in the background.`;
   if(status==="not_configured")return `${action}, but no email was sent because email delivery is not configured on the server. Configure SMTP settings on the backend, then retry.`;
   return `${action}, but email delivery failed. Check the backend SMTP settings and logs, then retry.`;
 };
@@ -146,6 +147,37 @@ useEffect(()=>{
 },[user]);
 
 useEffect(()=>localStorage.setItem("cp-designs",JSON.stringify(designs)),[designs]);useEffect(()=>localStorage.setItem("cp-creds",JSON.stringify(credentials)),[credentials]);useEffect(()=>localStorage.setItem("cp-recipients",JSON.stringify(recipients)),[recipients]);useEffect(()=>localStorage.setItem("cp-pathways",JSON.stringify(pathways)),[pathways]);useEffect(()=>localStorage.setItem("cp-email-templates",JSON.stringify(emailTemplates)),[emailTemplates]);useEffect(()=>localStorage.setItem("cp-forms",JSON.stringify(forms)),[forms]);
+useEffect(()=>{
+  const pending=credentials.filter(c=>c.certificateId&&(c.emailStatus==="pending"||c.emailStatus==="sending"));
+  if(!pending.length)return;
+  let active=true;
+  const refreshStatuses=async()=>{
+    try{
+      const results=await Promise.all(
+        Array.from({length:Math.ceil(pending.length/500)},(_,index)=>
+          api.getCertificateEmailStatuses(pending.slice(index*500,(index+1)*500).map(c=>c.certificateId))
+        )
+      );
+      if(!active)return;
+      const statuses=new Map(results.flatMap(result=>result.certificates||[]).map(c=>[c.certificateId,c]));
+      setCredentials(previous=>{
+        let changed=false;
+        const next=previous.map(c=>{
+          const current=statuses.get(c.certificateId);
+          if(!current||(current.emailStatus===c.emailStatus&&current.emailSentAt===c.emailSentAt))return c;
+          changed=true;
+          return {...c,emailStatus:current.emailStatus,emailSentAt:current.emailSentAt};
+        });
+        return changed?next:previous;
+      });
+    }catch(error){
+      console.error("Could not refresh email delivery statuses:",error);
+    }
+  };
+  void refreshStatuses();
+  const timer=setInterval(()=>void refreshStatuses(),2500);
+  return()=>{active=false;clearInterval(timer);};
+},[credentials]);
 const createDesign=()=>{setActive(fresh());setPage("Designer")},openDesign=d=>{setActive(structuredClone(d));setPage("Designer")},saveDesign=async d=>{try{let saved={...d};if(d.backendId){const result=await api.updateTemplate(d.backendId,{title:d.name||"Untitled certificate",design:d});saved={...d,backendId:result.certificate._id};}else{const result=await api.createTemplate({title:d.name||"Untitled certificate",description:"",design:d,organization:user?.organization||""});saved={...d,backendId:result.certificate._id};}setDesigns(p=>p.some(x=>x.id===saved.id)?p.map(x=>x.id===saved.id?saved:x):[saved,...p]);setActive(null);setPage("Design Templates");}catch(error){window.alert("Could not save design: "+error.message);}};
 const deleteDesign=async id=>{const design=designs.find(d=>d.id===id);try{if(design?.backendId)await api.deleteTemplate(design.backendId);setDesigns(p=>p.filter(d=>d.id!==id));}catch(error){window.alert("Could not delete design: "+error.message);}};
 const addRecipient=async r=>{if(recipients.some(x=>(x.email||"").trim().toLowerCase()===(r.email||"").trim().toLowerCase())){window.alert("A recipient with this email already exists.");return;}try{const result=await api.createRecipient({name:r.name,email:r.email,organization:r.organization||""});setRecipients(p=>[{...r,backendId:result.recipient._id},...p]);}catch(error){window.alert("Could not add recipient: "+error.message);}};
@@ -191,6 +223,14 @@ const resendIssuedCertificate=async id=>{
       }:c));
     }
     throw error;
+  }
+  if(result.emailStatus==="pending"||result.emailStatus==="sending"){
+    setCredentials(previous=>previous.map(c=>c.id===id?{
+      ...c,
+      emailStatus:result.emailStatus
+    }:c));
+    window.alert(emailDeliveryMessage(result.emailStatus,credential.email,"Email resend requested"));
+    return;
   }
   if(result.emailStatus!=="sent"){
     setCredentials(previous=>previous.map(c=>c.id===id?{

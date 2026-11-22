@@ -132,6 +132,16 @@ async function main() {
 
   issuedMongoId = issued.id || issued._id;
 
+  const emailStatusResult = await api("/issued-certificates/email-status", {
+    method: "POST",
+    body: JSON.stringify({ certificateIds: [issued.certificateId] })
+  });
+  check(
+    "Certificate email status lookup returned the issued certificate",
+    emailStatusResult.response.status === 200 &&
+    emailStatusResult.body.certificates?.[0]?.certificateId === issued.certificateId
+  );
+
   const stored = await IssuedCertificate.findById(issuedMongoId).lean();
 
   check("Design snapshot saved", stored?.designSnapshot?.elements?.length === 4);

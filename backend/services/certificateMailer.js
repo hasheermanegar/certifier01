@@ -1,4 +1,5 @@
 const nodemailer = require("nodemailer");
+let transporter;
 
 const isConfigured = () =>
   Boolean(process.env.SMTP_HOST && process.env.SMTP_USER &&
@@ -90,13 +91,20 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
 const sendCertificateEmail = async ({ to, recipientName, certificateTitle, verificationUrl, certificateId, pdfBuffer }) => {
   if (!isConfigured()) return { status: "not_configured" };
 
-  const port = Number(process.env.SMTP_PORT || 587);
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port,
-    secure: String(process.env.SMTP_SECURE || "false").toLowerCase() === "true",
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-  });
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      pool: true,
+      maxConnections: 2,
+      maxMessages: 100,
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 60000,
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT || 587),
+      secure: String(process.env.SMTP_SECURE || "false").toLowerCase() === "true",
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+    });
+  }
   const email = buildCertificateEmail({ recipientName, verificationUrl });
 
   await transporter.sendMail({

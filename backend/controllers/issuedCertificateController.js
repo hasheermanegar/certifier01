@@ -27,10 +27,16 @@ const issueCertificate = async (req, res) => {
       });
     }
 
-    const template = await Certificate.findOne({
-      _id: templateId,
-      createdBy: req.user._id
-    });
+    const [template, recipient] = await Promise.all([
+      Certificate.findOne({
+        _id: templateId,
+        createdBy: req.user._id
+      }),
+      Recipient.findOne({
+        _id: recipientId,
+        createdBy: req.user._id
+      })
+    ]);
 
     if (!template) {
       return res.status(404).json({
@@ -38,11 +44,6 @@ const issueCertificate = async (req, res) => {
         message: "Certificate template not found"
       });
     }
-
-    const recipient = await Recipient.findOne({
-      _id: recipientId,
-      createdBy: req.user._id
-    });
 
     if (!recipient) {
       return res.status(404).json({
@@ -89,35 +90,9 @@ const issueCertificate = async (req, res) => {
         organization: template.organization || ""
       },
       verificationUrl,
-      qrCode
+      qrCode,
+      emailStatus: sendEmail !== false && isConfigured() ? "pending" : "not_configured"
     });
-
-    let emailStatus = "not_configured";
-    if (sendEmail !== false) {
-      if (isConfigured()) {
-        try {
-          const pdfBuffer = await createCertificatePdfAttachment(
-            issuedCertificate.certificateId,
-            req.user._id
-          );
-          const delivery = await sendCertificateEmail({
-            to: recipient.email,
-            recipientName: recipient.name,
-            certificateTitle: issuedCertificate.templateSnapshot.title,
-            verificationUrl,
-            certificateId: issuedCertificate.certificateId,
-            pdfBuffer
-          });
-          emailStatus = delivery.status;
-          if (emailStatus === "sent") issuedCertificate.emailSentAt = new Date();
-        } catch (mailError) {
-          emailStatus = "failed";
-          console.error("Certificate email delivery failed:", mailError.message);
-        }
-      }
-      issuedCertificate.emailStatus = emailStatus;
-      await issuedCertificate.save();
-    }
 
     res.status(201).json({
       success: true,
@@ -306,6 +281,14 @@ const resendCertificateEmail = async (req, res) => {
       return res.status(409).json({ success: false, message: "Expired certificates cannot be emailed" });
     }
 
+    if (certificate.emailStatus === "pending" || certificate.emailStatus === "sending") {
+      return res.status(409).json({
+        success: false,
+        emailStatus: certificate.emailStatus,
+        message: "Certificate email is already queued for delivery."
+      });
+    }
+
     if (!isConfigured()) {
       certificate.emailStatus = "not_configured";
       await certificate.save();
@@ -316,41 +299,89 @@ const resendCertificateEmail = async (req, res) => {
       });
     }
 
-    const recipientName = certificate.recipientSnapshot?.name || certificate.recipient?.name;
-    const recipientEmail = certificate.recipientSnapshot?.email || certificate.recipient?.email;
-    const certificateTitle = certificate.templateSnapshot?.title || "Certificate";
-    let delivery;
-    try {
-      const pdfBuffer = await createCertificatePdfAttachment(
-        certificate.certificateId,
-        req.user._id
-      );
-      delivery = await sendCertificateEmail({
-        to: recipientEmail,
-        recipientName,
-        certificateTitle,
-        verificationUrl: certificate.verificationUrl,
-        certificateId: certificate.certificateId,
-        pdfBuffer
-      });
-    } catch (error) {
-      certificate.emailStatus = "failed";
-      await certificate.save();
-      throw error;
-    }
-
-    certificate.emailStatus = delivery.status;
-    if (delivery.status === "sent") certificate.emailSentAt = new Date();
+    certificate.emailStatus = "pending";
+    certificate.emailAttemptStartedAt = null;
     await certificate.save();
 
-    return res.json({ success: true, emailStatus: certificate.emailStatus, emailSentAt: certificate.emailSentAt });
+    return res.status(202).json({
+      success: true,
+      message: "Certificate email queued for delivery.",
+      emailStatus: certificate.emailStatus,
+      emailSentAt: certificate.emailSentAt
+    });
   } catch (error) {
     console.error("Resend certificate email error:", error.message);
-    return res.status(502).json({
-      success: false,
-      emailStatus: "failed",
-      message: "Email could not be delivered. Check SMTP credentials, port and security settings, and sender authorization."
+    return res.status(500).json({ success: false, message: "Could not queue certificate email." });
+  }
+};
+
+const processNextPendingCertificateEmail = async () => {
+  const certificate = await IssuedCertificate.findOneAndUpdate(
+    { emailStatus: "pending" },
+    {
+      $set: {
+        emailStatus: "sending",
+        emailAttemptStartedAt: new Date()
+      }
+    },
+    { new: true, sort: { issuedAt: 1 } }
+  );
+  if (!certificate) return false;
+
+  try {
+    if (!isConfigured()) {
+      certificate.emailStatus = "not_configured";
+      certificate.emailAttemptStartedAt = null;
+      await certificate.save();
+      return true;
+    }
+
+    const pdfBuffer = await createCertificatePdfAttachment(
+      certificate.certificateId,
+      certificate.createdBy
+    );
+    const delivery = await sendCertificateEmail({
+      to: certificate.recipientSnapshot?.email,
+      recipientName: certificate.recipientSnapshot?.name,
+      certificateTitle: certificate.templateSnapshot?.title || "Certificate",
+      verificationUrl: certificate.verificationUrl,
+      certificateId: certificate.certificateId,
+      pdfBuffer
     });
+
+    certificate.emailStatus = delivery.status;
+    certificate.emailAttemptStartedAt = null;
+    if (delivery.status === "sent") certificate.emailSentAt = new Date();
+    await certificate.save();
+  } catch (error) {
+    certificate.emailStatus = "failed";
+    certificate.emailAttemptStartedAt = null;
+    await certificate.save();
+    console.error("Certificate email delivery failed:", error.message);
+  }
+
+  return true;
+};
+
+const getCertificateEmailStatuses = async (req, res) => {
+  try {
+    const certificateIds = req.body?.certificateIds;
+    if (!Array.isArray(certificateIds) || certificateIds.length > 500) {
+      return res.status(400).json({
+        success: false,
+        message: "Provide up to 500 certificate IDs."
+      });
+    }
+
+    const certificates = await IssuedCertificate.find({
+      createdBy: req.user._id,
+      certificateId: { $in: certificateIds }
+    }).select("certificateId emailStatus emailSentAt").lean();
+
+    return res.json({ success: true, certificates });
+  } catch (error) {
+    console.error("Certificate email status lookup failed:", error.message);
+    return res.status(500).json({ success: false, message: "Could not fetch email delivery status." });
   }
 };
 
@@ -748,5 +779,7 @@ module.exports = {
   revokeCertificate,
   setCertificateExpiry,
   resendCertificateEmail,
-  downloadCertificatePDF
+  downloadCertificatePDF,
+  processNextPendingCertificateEmail,
+  getCertificateEmailStatuses
 };

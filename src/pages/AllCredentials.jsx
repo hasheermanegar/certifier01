@@ -170,6 +170,7 @@ export default function AllCredentials({ credentials = [], onCreate, onUpdate, o
             <tbody>
               {rows.map(c => {
                 const currentStatus = getCredentialStatus(c);
+                const emailPending = c.emailStatus === "pending" || c.emailStatus === "sending";
                 return (
                   <tr key={c.id}>
                     <td>
@@ -238,14 +239,14 @@ export default function AllCredentials({ credentials = [], onCreate, onUpdate, o
                           </button>
                           {onResend && currentStatus === "Issued" && <button
                             className="cp-row-action"
-                            disabled={resending === c.id}
+                            disabled={resending === c.id || emailPending}
                             onClick={async()=>{
                               setResending(c.id);
                               try { await onResend(c.id); }
                               catch(error) { window.alert("Could not resend email: " + error.message); }
                               finally { setResending(null); }
                             }}>
-                            <Mail size={13}/> {resending === c.id ? "Sending..." : "Resend email"}
+                            <Mail size={13}/> {resending === c.id||c.emailStatus==="sending" ? "Sending..." : emailPending ? "Email queued" : "Resend email"}
                           </button>}
                           {c.verificationUrl && <a className="cp-row-action" href={`${window.location.origin}/verify/${encodeURIComponent(c.certificateId)}`} target="_blank" rel="noreferrer">
                             <CheckCircle2 size={13}/> Verify

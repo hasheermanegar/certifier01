@@ -16,6 +16,10 @@ email was sent; resend reports the configuration error instead of claiming
 success. If delivery fails despite all variables being set, check the backend
 logs and the provider's sender/domain verification requirements.
 
+Certificate emails are queued after issuance or resend so PDF generation and
+SMTP delivery do not block the API response. The email status updates from
+pending to sent or failed in the credential list.
+
 ## Backend
 Working directory: backend
 Install: npm install

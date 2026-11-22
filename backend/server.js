@@ -6,6 +6,7 @@ require("dotenv").config();
 
 const connectDB = require("./config/db");
 const { startExpiryJob } = require("./jobs/expiryJob");
+const { startCertificateEmailJob } = require("./jobs/certificateEmailJob");
 const authRoutes = require("./routes/authRoutes");
 const certificateRoutes = require("./routes/certificateRoutes");
 const recipientRoutes = require("./routes/recipientRoutes");
@@ -69,6 +70,7 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   await connectDB();
   startExpiryJob();
+  startCertificateEmailJob();
 
   app.listen(PORT, () => {
     console.log(`CertifyPro server running on port ${PORT}`);
