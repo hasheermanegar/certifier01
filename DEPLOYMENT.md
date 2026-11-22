@@ -4,6 +4,7 @@
 Configure these variables in your hosting provider's secret/environment settings:
 PORT, MONGODB_URI, JWT_SECRET, FRONTEND_URL,
 SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS, MAIL_FROM.
+Set `SUPPORT_EMAIL` to the address shown in credential-email footers.
 
 Never upload backend/.env or real secrets to Git.
 
