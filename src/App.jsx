@@ -188,7 +188,7 @@ if(loading||authChecking)return <LoadingScreen/>;
 if(!user)return <AuthScreen onLogin={setUser}/>;
 return <div className="app-shell"><Sidebar page={page} setPage={setPage}/><main className="main-area"><Suspense fallback={<LoadingScreen/>}>{page!=="Designer"&&<Topbar title={page} onCreate={()=>setModal(true)}/>}
 {page==="Dashboard"&&<Dashboard designs={designs} credentials={credentials} onDesign={createDesign} onIssue={()=>setModal(true)} setPage={setPage}/>}
-{page==="Design Templates"&&<DesignTemplates designs={designs} onCreate={createDesign} onOpen={openDesign} onDelete={deleteDesign}/>}
+{page==="Design Templates"&&<DesignTemplates designs={designs} onCreate={createDesign} onOpen={openDesign} onDelete={deleteDesign} onUseTemplate={design=>{setActive(structuredClone(design));setPage("Designer");}}/>}
 {page==="Credential Templates"&&<CredentialTemplates designs={designs} onCreate={createDesign} onOpen={openDesign}/>}
 {page==="All Credentials"&&<AllCredentials credentials={credentials} onCreate={()=>setModal(true)} onUpdate={async (id,changes)=>{
   const current=credentials.find(c=>c.id===id);

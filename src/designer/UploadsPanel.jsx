@@ -1,17 +1,33 @@
 import { useRef, useState } from "react";
-import { ImagePlus, Upload, Image as ImageIcon } from "lucide-react";
+import { ImagePlus, Upload, Image as ImageIcon, Plus, Trash2 } from "lucide-react";
 
-export default function UploadsPanel({ onUpload, images = [] }) {
+const MAX_FILE_SIZE = 8 * 1024 * 1024;
+
+export default function UploadsPanel({ onUpload, onUse, onRemove, images = [] }) {
   const inputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
+  const [message, setMessage] = useState("");
 
-  const selectFile = file => {
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      window.alert("Please choose an image file.");
-      return;
+  const selectFiles = async fileList => {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+
+    const supported = files.filter(file => file.type.startsWith("image/"));
+    const valid = supported.filter(file => file.size <= MAX_FILE_SIZE);
+    if (valid.length !== files.length) {
+      setMessage("Some files were skipped. Use images up to 8 MB each.");
+    } else {
+      setMessage("");
     }
-    onUpload(file);
+
+    for (const file of valid) {
+      try {
+        await onUpload(file);
+      } catch (error) {
+        console.error("Could not upload image:", error);
+        setMessage(`Could not upload ${file.name || "image"}. Please try again.`);
+      }
+    }
   };
 
   return (
@@ -34,49 +50,61 @@ export default function UploadsPanel({ onUpload, images = [] }) {
         onDrop={e => {
           e.preventDefault();
           setDragging(false);
-          selectFile(e.dataTransfer.files?.[0]);
+          void selectFiles(e.dataTransfer.files);
         }}
       >
         <span className="cp-upload-icon"><Upload size={22}/></span>
-        <strong>Drag and drop your image</strong>
+        <strong>Drag and drop images</strong>
         <span>or <b>browse files</b></span>
-        <small>PNG, JPG, WebP or SVG · Maximum 8 MB</small>
+        <small>PNG, JPG, WebP or SVG · Up to 8 MB each</small>
       </button>
 
       <input
         ref={inputRef}
         type="file"
         accept="image/png,image/jpeg,image/webp,image/svg+xml"
+        multiple
         hidden
         onChange={e => {
-          selectFile(e.target.files?.[0]);
+          void selectFiles(e.target.files);
           e.target.value = "";
         }}
       />
 
+      {message && <p className="cp-upload-message" role="status">{message}</p>}
+
       <div className="cp-assets-heading">
-        <strong>Uploaded assets</strong>
-        <span>{images.length} files</span>
+        <strong>Your assets</strong>
+        <span>{images.length} {images.length === 1 ? "image" : "images"}</span>
       </div>
 
       {images.length === 0 ? (
         <div className="cp-assets-empty">
           <ImageIcon size={25}/>
-          <strong>No uploads yet</strong>
-          <p>Your uploaded images will appear here.</p>
+          <strong>No assets yet</strong>
+          <p>Upload an image to add it to the canvas or reuse it later.</p>
         </div>
       ) : (
         <div className="cp-assets-grid">
-          {images.map((src, i) => (
-            <div className="cp-asset-card" key={`${i}-${src.slice(0, 24)}`}>
+          {images.map((asset, i) => (
+            <article className="cp-asset-card" key={asset.id}>
               <div className="cp-asset-image">
-                <img src={src} alt={`Uploaded asset ${i + 1}`}/>
+                <img src={asset.src} alt={asset.name || `Uploaded asset ${i + 1}`}/>
               </div>
-              <span>Image {images.length - i}</span>
-            </div>
+              <span title={asset.name}>{asset.name || `Image ${images.length - i}`}</span>
+              <div className="cp-asset-actions">
+                <button type="button" onClick={() => onUse?.(asset)} aria-label={`Add ${asset.name || "image"} to canvas`}>
+                  <Plus size={12}/> Add to canvas
+                </button>
+                <button type="button" className="remove" onClick={() => onRemove?.(asset.id)} aria-label={`Remove ${asset.name || "image"} from uploads`}>
+                  <Trash2 size={12}/>
+                </button>
+              </div>
+            </article>
           ))}
         </div>
       )}
+
     </div>
   );
 }

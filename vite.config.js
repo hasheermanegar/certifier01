@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'https://certifypro-backend-4msc.onrender.com',
         changeOrigin: true,
       },
     },

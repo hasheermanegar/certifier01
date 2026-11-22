@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 const items = ["Dashboard","Credential Templates","All Credentials","Recipients","Bulk Issuing","Pathways","Analytics","Design Templates","Email Templates","Forms","Integrations","Getting Started","Credential Usage","Settings","Help Center"];
-const icons = ["⌂","▤","▧","♙","⇧","◇","▥","▧","✉","▣","⌘","✦","◷","⚙","?"];
+const icons = ["⌂","▤","▧","♙","⇧","◇","▥","▧","✉","▣","⌘","◎","◷","⚙","?"];
 
 export default function Sidebar({ page, setPage }) {
   const [searchOpen, setSearchOpen] = useState(false);
