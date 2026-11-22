@@ -5,7 +5,7 @@ const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
 const Certificate = require("../models/Certificate");
 const Recipient = require("../models/Recipient");
 const IssuedCertificate = require("../models/IssuedCertificate");
-const { sendCertificateEmail } = require("../services/certificateMailer");
+const { sendCertificateEmail, isConfigured } = require("../services/certificateMailer");
 
 const issueCertificate = async (req, res) => {
   try {
@@ -94,24 +94,26 @@ const issueCertificate = async (req, res) => {
 
     let emailStatus = "not_configured";
     if (sendEmail !== false) {
-      try {
-        const pdfBuffer = await createCertificatePdfAttachment(
-          issuedCertificate.certificateId,
-          req.user._id
-        );
-        const delivery = await sendCertificateEmail({
-          to: recipient.email,
-          recipientName: recipient.name,
-          certificateTitle: issuedCertificate.templateSnapshot.title,
-          verificationUrl,
-          certificateId: issuedCertificate.certificateId,
-          pdfBuffer
-        });
-        emailStatus = delivery.status;
-        if (emailStatus === "sent") issuedCertificate.emailSentAt = new Date();
-      } catch (mailError) {
-        emailStatus = "failed";
-        console.error("Certificate email delivery failed:", mailError.message);
+      if (isConfigured()) {
+        try {
+          const pdfBuffer = await createCertificatePdfAttachment(
+            issuedCertificate.certificateId,
+            req.user._id
+          );
+          const delivery = await sendCertificateEmail({
+            to: recipient.email,
+            recipientName: recipient.name,
+            certificateTitle: issuedCertificate.templateSnapshot.title,
+            verificationUrl,
+            certificateId: issuedCertificate.certificateId,
+            pdfBuffer
+          });
+          emailStatus = delivery.status;
+          if (emailStatus === "sent") issuedCertificate.emailSentAt = new Date();
+        } catch (mailError) {
+          emailStatus = "failed";
+          console.error("Certificate email delivery failed:", mailError.message);
+        }
       }
       issuedCertificate.emailStatus = emailStatus;
       await issuedCertificate.save();
@@ -304,21 +306,38 @@ const resendCertificateEmail = async (req, res) => {
       return res.status(409).json({ success: false, message: "Expired certificates cannot be emailed" });
     }
 
+    if (!isConfigured()) {
+      certificate.emailStatus = "not_configured";
+      await certificate.save();
+      return res.status(503).json({
+        success: false,
+        emailStatus: certificate.emailStatus,
+        message: "Email service is not configured. Set SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS and MAIL_FROM on the backend."
+      });
+    }
+
     const recipientName = certificate.recipientSnapshot?.name || certificate.recipient?.name;
     const recipientEmail = certificate.recipientSnapshot?.email || certificate.recipient?.email;
     const certificateTitle = certificate.templateSnapshot?.title || "Certificate";
-    const pdfBuffer = await createCertificatePdfAttachment(
-      certificate.certificateId,
-      req.user._id
-    );
-    const delivery = await sendCertificateEmail({
-      to: recipientEmail,
-      recipientName,
-      certificateTitle,
-      verificationUrl: certificate.verificationUrl,
-      certificateId: certificate.certificateId,
-      pdfBuffer
-    });
+    let delivery;
+    try {
+      const pdfBuffer = await createCertificatePdfAttachment(
+        certificate.certificateId,
+        req.user._id
+      );
+      delivery = await sendCertificateEmail({
+        to: recipientEmail,
+        recipientName,
+        certificateTitle,
+        verificationUrl: certificate.verificationUrl,
+        certificateId: certificate.certificateId,
+        pdfBuffer
+      });
+    } catch (error) {
+      certificate.emailStatus = "failed";
+      await certificate.save();
+      throw error;
+    }
 
     certificate.emailStatus = delivery.status;
     if (delivery.status === "sent") certificate.emailSentAt = new Date();
@@ -327,7 +346,11 @@ const resendCertificateEmail = async (req, res) => {
     return res.json({ success: true, emailStatus: certificate.emailStatus, emailSentAt: certificate.emailSentAt });
   } catch (error) {
     console.error("Resend certificate email error:", error.message);
-    return res.status(500).json({ success: false, message: "Could not send certificate email. Check SMTP configuration." });
+    return res.status(502).json({
+      success: false,
+      emailStatus: "failed",
+      message: "Email could not be delivered. Check SMTP credentials, port and security settings, and sender authorization."
+    });
   }
 };
 

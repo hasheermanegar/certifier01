@@ -218,6 +218,18 @@ async function main() {
     $set: { status: "valid" }
   });
 
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.MAIL_FROM) {
+    const unconfiguredResend = await api(
+      `/issued-certificates/${expiryIssued.certificateId}/email`,
+      { method: "POST" }
+    );
+    check(
+      "Resend reports missing SMTP configuration instead of success",
+      unconfiguredResend.response.status === 503 &&
+      unconfiguredResend.body.emailStatus === "not_configured"
+    );
+  }
+
   const expiredPdf = await api(
     `/issued-certificates/${expiryIssued.certificateId}/pdf`
   );

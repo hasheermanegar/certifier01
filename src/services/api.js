@@ -28,7 +28,10 @@ async function request(path, options = {}) {
         ? "Email or password is incorrect. If you don't have an account, select Create account."
         : `Request failed (${response.status})`
     );
-    throw new Error(message);
+    const error = new Error(message);
+    error.status = response.status;
+    error.data = data;
+    throw error;
   }
 
   return data;

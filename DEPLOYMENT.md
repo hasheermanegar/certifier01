@@ -8,6 +8,14 @@ Set `SUPPORT_EMAIL` to the address shown in credential-email footers.
 
 Never upload backend/.env or real secrets to Git.
 
+Credential emails are sent by the backend through the configured SMTP provider.
+For SMTP port 587, use `SMTP_SECURE=false`; for port 465, use
+`SMTP_SECURE=true`. `MAIL_FROM` must be an address authorized by the provider.
+If SMTP is missing, issuance still creates the certificate but reports that no
+email was sent; resend reports the configuration error instead of claiming
+success. If delivery fails despite all variables being set, check the backend
+logs and the provider's sender/domain verification requirements.
+
 ## Backend
 Working directory: backend
 Install: npm install

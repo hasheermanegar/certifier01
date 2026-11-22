@@ -26,6 +26,11 @@ const BulkIssuing=lazy(()=>import("./pages/BulkIssuing"));
 const CertificateDesigner=lazy(()=>import("./designer/CertificateDesigner"));
 const uid=()=>crypto.randomUUID();const fresh=()=>({id:uid(),name:"Untitled certificate",orientation:"landscape",width:1120,height:790,background:"#fff",elements:[{id:uid(),type:"text",x:100,y:90,width:920,height:70,text:"CERTIFICATE OF ACHIEVEMENT",fontSize:36,bold:true,color:"#17233d",align:"center"},{id:uid(),type:"text",x:150,y:230,width:820,height:50,text:"This certificate is proudly presented to",fontSize:20,color:"#64748b",align:"center"},{id:uid(),type:"attribute",x:150,y:300,width:820,height:70,text:"{{recipient_name}}",fontSize:40,bold:true,color:"#315eea",align:"center"},{id:uid(),type:"text",x:150,y:420,width:820,height:50,text:"For successfully completing the programme",fontSize:19,color:"#475569",align:"center"},{id:uid(),type:"attribute",x:250,y:520,width:620,height:40,text:"{{issue_date}}",fontSize:16,color:"#475569",align:"center"}]});
 const read=(k)=>{try{return JSON.parse(localStorage.getItem(k))||[]}catch{return[]}};
+const emailDeliveryMessage=(status,email,action="Certificate issued")=>{
+  if(status==="sent")return `${action}; the email was sent to ${email}.`;
+  if(status==="not_configured")return `${action}, but no email was sent because email delivery is not configured on the server. Configure SMTP settings on the backend, then retry.`;
+  return `${action}, but email delivery failed. Check the backend SMTP settings and logs, then retry.`;
+};
 const mergeCredentialRecipients=(previous,credentials)=>{
   const map=new Map();
   previous.forEach(r=>{
@@ -175,13 +180,31 @@ const revokeIssuedCertificate=async id=>{
 const resendIssuedCertificate=async id=>{
   const credential=credentials.find(c=>c.id===id);
   if(!credential?.certificateId) throw new Error("Certificate record not found.");
-  const result=await api.resendCertificateEmail(credential.certificateId);
+  let result;
+  try {
+    result=await api.resendCertificateEmail(credential.certificateId);
+  } catch(error) {
+    if(error.data?.emailStatus){
+      setCredentials(previous=>previous.map(c=>c.id===id?{
+        ...c,
+        emailStatus:error.data.emailStatus
+      }:c));
+    }
+    throw error;
+  }
+  if(result.emailStatus!=="sent"){
+    setCredentials(previous=>previous.map(c=>c.id===id?{
+      ...c,
+      emailStatus:result.emailStatus||"failed"
+    }:c));
+    throw new Error(emailDeliveryMessage(result.emailStatus,credential.email,"Email resend attempted"));
+  }
   setCredentials(previous=>previous.map(c=>c.id===id?{
     ...c,
-    emailStatus:result.emailStatus||"sent",
-    emailSentAt:result.emailSentAt||new Date().toISOString()
+    emailStatus:result.emailStatus,
+    emailSentAt:result.emailSentAt
   }:c));
-  window.alert("Certificate email sent successfully with its PDF attachment.");
+  window.alert(emailDeliveryMessage(result.emailStatus,credential.email,"Email resent"));
 };
 if(window.location.pathname.startsWith("/verify/"))return <PublicCertificateVerification/>;
 if(loading||authChecking)return <LoadingScreen/>;
@@ -216,7 +239,7 @@ return <div className="app-shell"><Sidebar page={page} setPage={setPage} mobileO
 {page==="Pathways"&&<Pathways pathways={pathways} designs={designs} recipients={recipients} onSave={p=>setPathways(prev=>prev.some(x=>x.id===p.id)?prev.map(x=>x.id===p.id?p:x):[p,...prev])} onDelete={id=>setPathways(prev=>prev.filter(p=>p.id!==id))}/>}
 {page==="Designer"&&active&&<CertificateDesigner design={active} onSave={saveDesign} onClose={()=>{setActive(null);setPage("Design Templates")}}/>}
 {!["Dashboard","Design Templates","Credential Templates","All Credentials","Recipients","Bulk Issuing","Pathways","Analytics","Email Templates","Forms","Integrations","Getting Started","Credential Usage","Settings","Help Center","Designer"].includes(page)&&<div className="page-content"><div className="empty-state"><h2>{page}</h2><p>This workspace section is ready to be connected.</p><button className="btn-primary" onClick={()=>setPage("Dashboard")}>Back to dashboard</button></div></div>}</Suspense></main>
-{modal&&<IssueModal designs={designs} recipients={recipients} close={()=>setModal(false)} submit={async v=>{try{const design=designs.find(d=>d.id===v.templateId);const recipient=recipients.find(r=>r.id===v.recipientId);if(!design?.backendId||!recipient?.backendId){window.alert("Please select a saved design and a recipient synced with the server.");return;}const result=await api.issueCertificate(design.backendId,recipient.backendId,{title:design.name||"Certificate"});const issued=result.certificate;setCredentials(p=>[{id:issued.id||issued._id||uid(),backendId:issued.id||issued._id,certificateId:issued.certificateId,recipient:recipient.name,email:recipient.email,title:design.name,templateId:design.id,recipientId:recipient.id,status:issued.status||"valid",issuedAt:issued.issuedAt||new Date().toISOString(),verificationUrl:issued.verificationUrl,qrCode:issued.qrCode},...p]);setModal(false);setPage("All Credentials");}catch(error){window.alert("Could not issue certificate: "+error.message);}}}/> }</div>}
+{modal&&<IssueModal designs={designs} recipients={recipients} close={()=>setModal(false)} submit={async v=>{try{const design=designs.find(d=>d.id===v.templateId);const recipient=recipients.find(r=>r.id===v.recipientId);if(!design?.backendId||!recipient?.backendId){window.alert("Please select a saved design and a recipient synced with the server.");return;}const result=await api.issueCertificate(design.backendId,recipient.backendId,{title:design.name||"Certificate"});const issued=result.certificate;setCredentials(p=>[{id:issued.id||issued._id||uid(),backendId:issued.id||issued._id,certificateId:issued.certificateId,recipient:recipient.name,email:recipient.email,title:design.name,templateId:design.id,recipientId:recipient.id,status:issued.status||"valid",issuedAt:issued.issuedAt||new Date().toISOString(),verificationUrl:issued.verificationUrl,qrCode:issued.qrCode,emailStatus:issued.emailStatus||"not_configured",emailSentAt:issued.emailSentAt},...p]);setModal(false);setPage("All Credentials");window.alert(emailDeliveryMessage(issued.emailStatus,recipient.email));}catch(error){window.alert("Could not issue certificate: "+error.message);}}}/> }</div>}
 function IssueModal({designs,recipients,close,submit}) {
   const [f,S] = useState({recipientId:"",templateId:""});
   const [saving,setSaving] = useState(false);

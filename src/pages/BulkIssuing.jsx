@@ -217,7 +217,8 @@ export default function BulkIssuing({
       onRecipients(nextRecipients);
       if (issued.length) onIssue(issued);
       setReport({ issued, skipped: failed });
-      setSuccess(`${issued.length} certificate(s) issued successfully${failed.length ? `; ${failed.length} row(s) skipped or failed` : ""}.`);
+      const emailsNotSent = issued.filter(certificate => certificate.emailStatus !== "sent").length;
+      setSuccess(`${issued.length} certificate(s) issued successfully${emailsNotSent ? `; ${emailsNotSent} email(s) were not sent. Check SMTP configuration and the email status in All Credentials` : ""}${failed.length ? `; ${failed.length} row(s) skipped or failed` : ""}.`);
       if (!issued.length) setError("No certificates were issued. Check the report below.");
     } finally {
       setIssuing(false);
