@@ -1,7 +1,7 @@
 import {useEffect,useRef,useState} from "react";
 import {Rnd} from "react-rnd";
 import {QRCodeSVG} from "qrcode.react";
-import {Eye, icons, Printer, X} from "lucide-react";
+import {Eye, icons, Image as ImageIcon, Printer, QrCode, Shapes, SlidersHorizontal, Trash2, Type, X} from "lucide-react";
 import ToolRail from "./ToolRail";
 import TemplatesPanel from "./TemplatesPanel";
 import ElementsPanel from "./ElementsPanel";
@@ -138,7 +138,7 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
   const previewButtonRef=useRef(null);
   const previewCloseRef=useRef(null);
   const previewDialogRef=useRef(null);
-  const [zoom,Z]=useState(65);
+  const [zoom,Z]=useState(100);
   const [workspaceSize,WS]=useState({width:800,height:600});
   const workspaceRef=useRef(null);
   const canvas=useRef(null);
@@ -542,16 +542,16 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
       </div>
     </header>
 
-    <div className="cp-editor-body">
+    <div className={`cp-editor-body ${mobilePanel==="properties"?"":"cp-properties-collapsed"}`}>
       <ToolRail active={tool} onSelect={nextTool=>{T(nextTool);S(null);setMobilePanel("tools")}}/>
-      <aside className={`cp-editor-panel ${mobilePanel==="tools"?"cp-mobile-open":""}`}>{panel}</aside>
+      <aside id="certificate-tools" className={`cp-editor-panel ${mobilePanel==="tools"?"cp-mobile-open":""}`}>{panel}</aside>
       {mobilePanel && <button type="button" className="cp-mobile-drawer-backdrop" aria-label="Close panel" onClick={()=>setMobilePanel("")}/>}
       <main className="cp-workspace">
         <div className="cp-workspace-toolbar">
           <div><span className="cp-live-dot"/> <b>{d.name||"Untitled certificate"}</b><span className="cp-toolbar-separator">|</span><span>{d.orientation==="portrait"?"Portrait":"Landscape"} · {d.width} × {d.height}</span></div>
           <div className="cp-workspace-toolbar-actions">
-            <button type="button" className="cp-mobile-panel-toggle" onClick={()=>setMobilePanel(v=>v==="tools"?"":"tools")}>Tools</button>
-            <button type="button" className="cp-mobile-panel-toggle" onClick={()=>setMobilePanel(v=>v==="properties"?"":"properties")}>Properties</button>
+            <button type="button" className="cp-mobile-panel-toggle" aria-expanded={mobilePanel==="tools"} aria-controls="certificate-tools" onClick={()=>setMobilePanel(v=>v==="tools"?"":"tools")}>Tools</button>
+            <button type="button" className="cp-mobile-panel-toggle cp-mobile-property-toggle" aria-expanded={mobilePanel==="properties"} aria-controls="certificate-properties" onClick={()=>setMobilePanel(v=>v==="properties"?"":"properties")}>Properties</button>
             <button onClick={()=>change("landscape")} className={d.orientation==="landscape"?"chosen":""}>Landscape</button>
             <button onClick={()=>change("portrait")} className={d.orientation==="portrait"?"chosen":""}>Portrait</button>
           </div>
@@ -628,14 +628,15 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
           <div className="cp-canvas-footer"><span>CertifyPro Studio</span><span>{d.elements.length} elements · {d.width} × {d.height}px</span></div>
         </div>
       </main>
-      <aside className={`cp-properties cp-properties-v2 ${mobilePanel==="properties"?"cp-mobile-open":""}`}>
+      <aside id="certificate-properties" className={`cp-properties cp-properties-v2 ${mobilePanel==="properties"?"cp-mobile-open":""}`}>
         <div className="cp-properties-heading cp-props-header">
+          <span className="cp-props-header-icon"><SlidersHorizontal size={18}/></span>
           <div>
             <span className="cp-kicker">DESIGN INSPECTOR</span>
             <h2>Properties</h2>
             <p>{cur ? "Edit and customise your selected element." : "Configure your certificate design."}</p>
           </div>
-          <span className="cp-props-status">{cur ? "ELEMENT" : "CANVAS"}</span>
+          <span className="cp-props-status">{cur ? "OBJECT" : "CANVAS"}</span>
         </div>
 
         {cur ? <>
@@ -646,7 +647,7 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
             </div>
             <div className="cp-props-selected">
               <div className="cp-props-selected-icon">
-                {cur.type === "qr" ? "▦" : cur.type === "image" ? "▧" : cur.type === "shape" ? "◇" : "T"}
+                {cur.type === "qr" ? <QrCode size={19}/> : cur.type === "image" ? <ImageIcon size={19}/> : cur.type === "shape" ? <Shapes size={19}/> : <Type size={19}/>}
               </div>
               <div className="cp-props-selected-info">
                 <strong>{cur.type === "qr" ? "QR code" : cur.type === "image" ? "Image" : cur.type === "shape" ? "Shape" : "Text element"}</strong>
@@ -740,9 +741,9 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
               </label>
               <div className="cp-props-section-title cp-props-subtitle"><strong>Text style</strong></div>
               <div className="cp-type-buttons">
-                <button className={cur.bold ? "active" : ""} onClick={()=>patch(cur.id,{bold:!cur.bold})}><b>B</b></button>
-                <button className={cur.italic ? "active" : ""} onClick={()=>patch(cur.id,{italic:!cur.italic})}><i>I</i></button>
-                <button className={cur.underline ? "active" : ""} onClick={()=>patch(cur.id,{underline:!cur.underline})}><u>U</u></button>
+                <button type="button" className={cur.bold ? "active" : ""} aria-label="Bold" aria-pressed={!!cur.bold} onClick={()=>patch(cur.id,{bold:!cur.bold})}><b>B</b></button>
+                <button type="button" className={cur.italic ? "active" : ""} aria-label="Italic" aria-pressed={!!cur.italic} onClick={()=>patch(cur.id,{italic:!cur.italic})}><i>I</i></button>
+                <button type="button" className={cur.underline ? "active" : ""} aria-label="Underline" aria-pressed={!!cur.underline} onClick={()=>patch(cur.id,{underline:!cur.underline})}><u>U</u></button>
               </div>
               <label className="cp-props-field">Alignment
                 <select value={cur.align || "center"} onChange={e=>patch(cur.id,{align:e.target.value})}>
@@ -761,7 +762,7 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
             </section>
           </> : null}
 
-          <button className="danger-button cp-props-delete" onClick={()=>del(cur.id)}>Delete element</button>
+          <button className="danger-button cp-props-delete" onClick={()=>del(cur.id)}><Trash2 size={15}/> Delete element</button>
         </> : (
           <section className="cp-props-section cp-props-canvas-section">
             <div className="cp-props-canvas-icon">✳</div>

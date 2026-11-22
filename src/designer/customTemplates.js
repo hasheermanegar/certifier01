@@ -50,7 +50,7 @@ export async function createArtworkTemplate(file, { canvaUrl = "" } = {}) {
   const isImage = ["image/png", "image/jpeg", "image/webp"].includes(file.type) ||
     /\.(png|jpe?g|webp)$/i.test(file.name);
   if (!isPdf && !isImage) {
-    throw new Error("Use a Canva-exported PDF, PNG, JPG or WebP file.");
+    throw new Error("Use a PDF, PNG, JPG or WebP file.");
   }
 
   let dataUrl;
@@ -125,4 +125,58 @@ export async function createArtworkTemplate(file, { canvaUrl = "" } = {}) {
       height
     }]
   };
+}
+
+export async function createArtworkTemplates(file, options = {}) {
+  if (!file) throw new Error("Choose a file to import.");
+  if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
+    return [await createArtworkTemplate(file, options)];
+  }
+  if (file.size > 25 * 1024 * 1024) {
+    throw new Error("Choose a file smaller than 25 MB.");
+  }
+
+  const pdfjs = await import("pdfjs-dist");
+  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+  const pdf = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+  const templates = [];
+  const baseName = file.name.replace(/\.pdf$/i, "") || "Imported design";
+
+  try {
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+      const page = await pdf.getPage(pageNumber);
+      const viewport = page.getViewport({ scale: 1.5 });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(viewport.width);
+      canvas.height = Math.round(viewport.height);
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Canvas rendering is unavailable.");
+      await page.render({ canvasContext: context, viewport }).promise;
+      const pageBlob = await new Promise((resolve, reject) => {
+        canvas.toBlob(blob => blob
+          ? resolve(blob)
+          : reject(new Error(`Could not export PDF page ${pageNumber}.`)), "image/jpeg", 0.82);
+      });
+      const pageFile = new File([pageBlob], `${baseName}-page-${pageNumber}.jpg`, { type: "image/jpeg" });
+      const template = await createArtworkTemplate(pageFile, options);
+      template.name = pdf.numPages > 1 ? `${baseName} · Page ${pageNumber}` : baseName;
+      template.sourceFormat = "PDF";
+      template.sourcePageCount = pdf.numPages;
+      template.sourcePageNumber = pageNumber;
+      templates.push(template);
+    }
+  } finally {
+    await pdf.destroy();
+  }
+
+  if (!templates.length) throw new Error("The PDF does not contain any pages.");
+  return templates;
+}
+
+export async function createImportedTemplates(file, options = {}) {
+  if (/\.pptx$/i.test(file?.name || "")) {
+    const { createCanvaPptxTemplates } = await import("./canvaPptx");
+    return createCanvaPptxTemplates(file, options);
+  }
+  return createArtworkTemplates(file, options);
 }

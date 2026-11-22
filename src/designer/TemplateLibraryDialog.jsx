@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ChevronRight, LayoutTemplate, Search, Trash2, X, ExternalLink, Upload } from "lucide-react";
+import { ArrowLeft, ChevronRight, LayoutTemplate, Search, Trash2, X, ExternalLink, Upload, Cloud } from "lucide-react";
 import CertificateThumbnail from "./CertificateThumbnail";
 
 const EXPLORE = "explore";
@@ -33,6 +33,11 @@ function TemplateCard({ item, design, onSelect, onPreview, onDelete }) {
             <ExternalLink size={12} /> Open in Canva
           </a>
         )}
+        {item.driveUrl && (
+          <a href={item.driveUrl} target="_blank" rel="noopener noreferrer" onClick={event => event.stopPropagation()}>
+            <ExternalLink size={12} /> Open in Drive
+          </a>
+        )}
       </div>
     </article>
   );
@@ -47,7 +52,8 @@ export default function TemplateLibraryDialog({
   onClose,
   onSelect,
   onDeleteCustom,
-  onImportCanva
+  onImportFile,
+  onImportDrive
 }) {
   const dialogRef = useRef(null);
   const [section, setSection] = useState(EXPLORE);
@@ -103,10 +109,16 @@ export default function TemplateLibraryDialog({
     ? item
     : designFor(item);
 
-  const importCanva = () => {
+  const importFile = () => {
     setSection(CUSTOM);
     setPreviewItem(null);
-    onImportCanva?.();
+    onImportFile?.();
+  };
+
+  const importDrive = () => {
+    setSection(CUSTOM);
+    setPreviewItem(null);
+    onImportDrive?.();
   };
 
   const renderCards = entries => (
@@ -149,9 +161,14 @@ export default function TemplateLibraryDialog({
             <p>Browse {templates.length.toLocaleString()} editable designs, preview a template, then open it in the editor.</p>
           </div>
           <div className="cp-template-browser-header-actions">
-            {onImportCanva && (
-              <button type="button" className="cp-design-create cp-template-browser-import" onClick={importCanva}>
-                <Upload size={14} /> Import Canva design
+            {onImportFile && (
+              <button type="button" className="cp-design-create cp-template-browser-import" onClick={importFile}>
+                <Upload size={14} /> Upload file
+              </button>
+            )}
+            {onImportDrive && (
+              <button type="button" className="cp-design-create cp-template-browser-import" onClick={importDrive}>
+                <Cloud size={14} /> Import from Drive
               </button>
             )}
             <button type="button" className="cp-template-browser-close" onClick={close} aria-label="Close template library">

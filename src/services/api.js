@@ -9,12 +9,13 @@ export const authStorage = {
 
 async function request(path, options = {}) {
   const token = authStorage.getToken();
+  const isPublicAuthRequest = path === "/auth/login" || path === "/auth/register";
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(token && !isPublicAuthRequest ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });
@@ -22,7 +23,12 @@ async function request(path, options = {}) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.message || `Request failed (${response.status})`);
+    const message = data.message || data.error || (
+      response.status === 401 && path === "/auth/login"
+        ? "Email or password is incorrect. If you don't have an account, select Create account."
+        : `Request failed (${response.status})`
+    );
+    throw new Error(message);
   }
 
   return data;

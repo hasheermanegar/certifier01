@@ -1,8 +1,14 @@
-import { useRef, useState } from "react";
-import { ChevronRight, LayoutTemplate } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronRight, LayoutTemplate, Cloud, Link2 } from "lucide-react";
 import CertificateThumbnail from "./CertificateThumbnail";
 import TemplateLibraryDialog from "./TemplateLibraryDialog";
-import { createArtworkTemplate, normalizeCustomTemplate } from "./customTemplates";
+import { createImportedTemplates, normalizeCustomTemplate } from "./customTemplates";
+import {
+  getGoogleDriveSetupMessage,
+  importPublicGoogleDriveTemplate,
+  importSelectedGoogleDriveTemplates,
+  preloadGoogleDrivePicker
+} from "./googleDrive";
 
 const baseTemplates = [
   { id: 1, name: "Classic Achievement", category: "Certificates", bg: "#ffffff", border: "#315eea", accent: "#172554", title: "CERTIFICATE", subtitle: "OF ACHIEVEMENT" },
@@ -331,7 +337,26 @@ export default function TemplatesPanel({ design, backgroundImage = "", onApply }
   const [custom, setCustom] = useState(readCustomTemplates);
   const [notice, setNotice] = useState("");
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [driveLink, setDriveLink] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [drivePickerReady, setDrivePickerReady] = useState(false);
+  const [drivePickerLoadError, setDrivePickerLoadError] = useState("");
   const uploadInput = useRef(null);
+  const drivePickerSetupMessage = getGoogleDriveSetupMessage({ picker: true });
+  const driveLinkSetupMessage = getGoogleDriveSetupMessage();
+
+  useEffect(() => {
+    if (drivePickerSetupMessage) return;
+
+    let active = true;
+    preloadGoogleDrivePicker().then(() => {
+      if (active) setDrivePickerReady(true);
+    }).catch(error => {
+      if (active) setDrivePickerLoadError(error.message);
+    });
+    return () => { active = false; };
+  }, [drivePickerSetupMessage]);
+  const drivePickerError = drivePickerSetupMessage || drivePickerLoadError;
 
   const recentTemplates = templates.filter(template => recent.includes(template.id));
 
@@ -365,32 +390,74 @@ export default function TemplatesPanel({ design, backgroundImage = "", onApply }
     setTimeout(() => setNotice(""), 2200);
   };
 
+  const saveImportedTemplates = importedTemplates => {
+    const next = [...importedTemplates, ...custom];
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    } catch (error) {
+      console.error("Could not save imported template:", error);
+      throw new Error("Browser storage is full. Remove an old custom template and try again.", { cause: error });
+    }
+    setCustom(next);
+    setOrientation(importedTemplates[0]?.orientation || orientation);
+  };
+
   const importTemplate = async file => {
     if (!file) return;
+    setImporting(true);
     try {
-      let importedTemplates;
-      if (/\.pptx$/i.test(file.name)) {
-        const { createCanvaPptxTemplates } = await import("./canvaPptx");
-        importedTemplates = await createCanvaPptxTemplates(file);
-      } else {
-        importedTemplates = [await createArtworkTemplate(file)];
-      }
-      const next = [...importedTemplates, ...custom];
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      } catch (error) {
-        console.error("Could not save imported template:", error);
-        throw new Error("Browser storage is full. Remove an old custom template and try again.", { cause: error });
-      }
-
-      setCustom(next);
-      setOrientation(importedTemplates[0]?.orientation || orientation);
-      setNotice(/\.pptx$/i.test(file.name)
+      const importedTemplates = await createImportedTemplates(file);
+      saveImportedTemplates(importedTemplates);
+      const isPptx = importedTemplates[0]?.sourceFormat === "PPTX";
+      const isPdf = importedTemplates[0]?.sourceFormat === "PDF";
+      setNotice(isPptx
         ? `${importedTemplates.length} PowerPoint slide${importedTemplates.length === 1 ? "" : "s"} imported as editable layers.`
-        : "Artwork uploaded as a template. It stays as a flat image layer; add text and fields from the editor.");
+        : isPdf && importedTemplates.length > 1
+          ? `${importedTemplates.length} PDF pages saved as separate templates.`
+          : "Artwork uploaded as a template. It stays as a flat image layer; add text and fields from the editor.");
     } catch (error) {
       console.error(error);
       setNotice("Import failed: " + (error?.message || "unsupported or damaged file"));
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const importPublicDriveLink = async () => {
+    if (!driveLink.trim()) return;
+    setImporting(true);
+    try {
+      const imported = await importPublicGoogleDriveTemplate(driveLink);
+      saveImportedTemplates(imported);
+      setDriveLink("");
+      setNotice(`${imported.length} template${imported.length === 1 ? "" : "s"} imported from Google Drive.`);
+    } catch (error) {
+      console.error("Could not import public Google Drive file:", error);
+      setNotice("Drive import failed: " + (error?.message || "Could not import that file."));
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const importFromGoogleDrive = async () => {
+    setImporting(true);
+    const imported = [];
+    const failures = [];
+    try {
+      const result = await importSelectedGoogleDriveTemplates();
+      imported.push(...result.templates);
+      failures.push(...result.failures);
+      if (imported.length) saveImportedTemplates(imported);
+      if (!result.selectedCount) return;
+      setNotice([
+        imported.length ? `${imported.length} template${imported.length === 1 ? "" : "s"} imported from Google Drive.` : "",
+        ...failures
+      ].filter(Boolean).join(" "));
+    } catch (error) {
+      console.error("Could not import from Google Drive:", error);
+      setNotice("Drive import failed: " + (error?.message || "Could not import from Google Drive."));
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -440,8 +507,8 @@ export default function TemplatesPanel({ design, backgroundImage = "", onApply }
       </div>
 
       <div className="cp-custom-template-actions">
-        <button type="button" className="cp-upload-template" onClick={() => uploadInput.current?.click()}>
-          <span>＋ Upload Template</span>
+        <button type="button" className="cp-upload-template" onClick={() => uploadInput.current?.click()} disabled={importing}>
+          <span>{importing ? "Importing…" : "＋ Upload Template"}</span>
         </button>
         <input
           ref={uploadInput}
@@ -453,8 +520,30 @@ export default function TemplatesPanel({ design, backgroundImage = "", onApply }
         <button type="button" onClick={saveCurrent}>Save Current Design</button>
       </div>
 
+      <div className="cp-drive-template-import">
+        <label>
+          <span>Public Google Drive link</span>
+          <input
+            type="url"
+            value={driveLink}
+            onChange={event => setDriveLink(event.target.value)}
+            placeholder="https://drive.google.com/file/d/…"
+            aria-label="Public Google Drive file link"
+          />
+        </label>
+        <div>
+          <button type="button" onClick={() => { void importPublicDriveLink(); }} disabled={importing || !driveLink.trim() || !!driveLinkSetupMessage}>
+            <Link2 size={13}/> Import link
+          </button>
+          <button type="button" onClick={() => { void importFromGoogleDrive(); }} disabled={importing || !drivePickerReady || !!drivePickerSetupMessage}>
+            <Cloud size={13}/> {drivePickerSetupMessage ? "Drive not configured" : drivePickerReady ? "Choose from Drive" : "Loading Drive…"}
+          </button>
+        </div>
+        {drivePickerError && <p role="status">{drivePickerError}</p>}
+      </div>
+
       <p className="cp-template-upload-help">
-        Uploaded artwork stays intact as a movable image layer. Add editable text and attributes on top; text baked into a flat image cannot be separated automatically.
+        Every PDF page is saved as a separate template. Artwork stays a movable image layer; add editable text and attributes on top. Public Drive links must be shared with anyone who has the link.
       </p>
 
       {notice && <p className="cp-template-notice" role="status">{notice}</p>}
@@ -527,7 +616,8 @@ export default function TemplatesPanel({ design, backgroundImage = "", onApply }
         buildDesign={createTemplateDesign}
         onClose={() => setLibraryOpen(false)}
         onSelect={applyTemplate}
-        onImportCanva={() => uploadInput.current?.click()}
+        onImportFile={() => uploadInput.current?.click()}
+        onImportDrive={() => { void importFromGoogleDrive(); }}
         onDeleteCustom={item => {
           if (window.confirm(`Delete custom template "${item.name}"?`)) removeCustom(item);
         }}
