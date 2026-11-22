@@ -7560,12 +7560,17 @@ button[class*="add"]:hover {
 }
 
 /* Certificate designer canvas and Vistara properties inspector */
-.sidebar {
+.sidebar,
+.cp-designer .cp-editor-panel {
   scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.sidebar::-webkit-scrollbar {
+.sidebar::-webkit-scrollbar,
+.cp-designer .cp-editor-panel::-webkit-scrollbar {
   display: none;
+  width: 0;
+  height: 0;
 }
 
 .cp-designer .cp-canvas-scroll {
