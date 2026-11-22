@@ -138,11 +138,12 @@ export async function createArtworkTemplates(file, options = {}) {
 
   const pdfjs = await import("pdfjs-dist");
   pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
-  const pdf = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
   const templates = [];
   const baseName = file.name.replace(/\.pdf$/i, "") || "Imported design";
 
   try {
+    const pdf = await loadingTask.promise;
     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
       const page = await pdf.getPage(pageNumber);
       const viewport = page.getViewport({ scale: 1.5 });
@@ -166,7 +167,7 @@ export async function createArtworkTemplates(file, options = {}) {
       templates.push(template);
     }
   } finally {
-    await pdf.destroy();
+    await loadingTask.destroy();
   }
 
   if (!templates.length) throw new Error("The PDF does not contain any pages.");
