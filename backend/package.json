@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "node test-e2e.js",
+    "test:mailer": "node --test test/certificateMailer.test.js",
     "start": "node server.js",
     "dev": "nodemon server.js",
     "check": "node --check server.js && node --check jobs/expiryJob.js && node --check controllers/authController.js && node --check controllers/certificateController.js && node --check controllers/issuedCertificateController.js && node --check controllers/recipientController.js && node --check services/certificateMailer.js && node --check middleware/authMiddleware.js"

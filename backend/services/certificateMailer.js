@@ -1,4 +1,8 @@
+const fs = require("node:fs");
+const path = require("node:path");
+
 const DEFAULT_SUPPORT_EMAIL = "hasheermanegar@gmail.com";
+const HERO_IMAGE_PATH = path.join(__dirname, "../email-assets/credential-hero.png");
 
 const isConfigured = () =>
   Boolean(
@@ -14,20 +18,23 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
   const safeName = escapeHtml(name);
   const safeVerificationUrl = escapeHtml(verificationUrl);
   const safeSupportEmail = escapeHtml(supportEmail);
-  const intro = "Your achievement is available in an online format so that you can retrieve it anywhere, anytime, and use it in a variety of ways:";
+  const intro = "Your achievement is available online so you can retrieve it anywhere, anytime, and use it in a variety of ways:";
   const actions = [
-    "add it to your LinkedIn profile to get better job opportunities",
-    "share it on social media to showcase your skills",
-    "download it in PDF format for printing"
+    { icon: "in", text: "Add it to your LinkedIn profile to get better job opportunities" },
+    { icon: "↗", text: "Share it on social media to showcase your skills" },
+    { icon: "↓", text: "Download it in PDF format for printing" }
   ];
+  const deliveryNote = "A PDF copy of your certificate is attached to this email.";
   const footer = `Having trouble with your credential or want to unsubscribe from email list? Contact us at ${supportEmail}.`;
 
   const text = [
-    `Congratulations, here is your credential for ${name}!`,
+    `Congratulations! Here is your credential for ${name}.`,
     "",
     intro,
     "",
-    ...actions.map(action => `- ${action}`),
+    ...actions.map(action => `- ${action.text}`),
+    "",
+    deliveryNote,
     "",
     `View Credential: ${verificationUrl}`,
     "",
@@ -41,42 +48,62 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Your credential is ready</title>
   </head>
-  <body style="margin:0;padding:0;background-color:#f1f1f1;font-family:Arial,Helvetica,sans-serif;color:#333333;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:#f1f1f1;">
+  <body style="width:100%;margin:0;padding:0;background-color:#eaf4ed;font-family:Arial,Helvetica,sans-serif;color:#102216;-webkit-text-size-adjust:100%;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#eaf4ed" style="width:100%;background-color:#eaf4ed;">
       <tr>
-        <td align="center" style="padding:40px 12px;">
-          <table role="presentation" width="430" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:430px;background-color:#ffffff;border:1px solid #e4e4e4;">
+        <td align="center" style="padding:24px 12px;">
+          <table role="presentation" width="620" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:620px;background-color:#ffffff;border:1px solid #d6e8da;border-radius:18px;overflow:hidden;">
             <tr>
-              <td align="center" style="padding:30px 28px 18px;">
-                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                  <tr>
-                    <td valign="middle" style="padding-right:10px;">
-                      <table role="presentation" width="32" cellpadding="0" cellspacing="0" border="0" style="width:32px;">
-                        <tr><td height="16" style="height:16px;border:4px solid #111111;border-bottom:0;border-radius:18px 18px 0 0;font-size:0;line-height:0;">&nbsp;</td></tr>
-                        <tr><td height="4" style="height:4px;background-color:#111111;font-size:0;line-height:0;">&nbsp;</td></tr>
-                        <tr><td height="4" style="height:4px;background-color:#111111;font-size:0;line-height:0;">&nbsp;</td></tr>
-                      </table>
-                    </td>
-                    <td valign="middle" style="font-size:32px;line-height:1;font-weight:700;letter-spacing:-1.5px;color:#050505;">Certifier</td>
-                  </tr>
-                </table>
+              <td align="center" bgcolor="#102216" style="padding:24px 18px;background-color:#102216;font-size:29px;line-height:1.2;font-weight:700;letter-spacing:-.8px;">
+                <span style="color:#ffffff;">Certify</span><span style="color:#11d452;"> pro</span>
               </td>
             </tr>
             <tr>
-              <td style="padding:0 38px 34px;">
-                <h1 style="margin:0 0 16px;font-size:18px;line-height:1.45;font-weight:700;color:#333333;">Congratulations, here is your credential for ${safeName}!</h1>
-                <p style="margin:0 0 16px;font-size:13px;line-height:1.55;color:#555555;">${intro}</p>
-                <ul style="margin:0 0 18px;padding-left:18px;font-size:13px;line-height:1.55;color:#555555;">
-                  ${actions.map(action => `<li style="padding:1px 0;">${action}</li>`).join("")}
-                </ul>
-                <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 15px;">
+              <td align="center" bgcolor="#26744f" style="padding:0;background-color:#26744f;">
+                <img src="cid:certificate-hero" width="620" alt="Certificate with an award seal" style="display:block;width:100%;max-width:620px;height:auto;border:0;">
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:38px 34px 40px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 16px;">
                   <tr>
-                    <td align="center" bgcolor="#2f63d8" style="background-color:#2f63d8;border-radius:28px;">
-                      <a href="${safeVerificationUrl}" style="display:inline-block;padding:15px 26px;color:#ffffff;font-size:14px;line-height:1;font-weight:700;text-decoration:none;">View Credential</a>
+                    <td valign="middle" width="36" style="width:36px;border-top:1px solid #4c9a66;font-size:0;line-height:0;">&nbsp;</td>
+                    <td align="center" style="padding:0 12px;color:#1a4d2e;font-size:13px;line-height:1.3;font-weight:700;letter-spacing:2px;">CONGRATULATIONS</td>
+                    <td valign="middle" width="36" style="width:36px;border-top:1px solid #4c9a66;font-size:0;line-height:0;">&nbsp;</td>
+                  </tr>
+                </table>
+                <h1 style="max-width:500px;margin:0 0 20px;color:#102216;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:1.2;font-weight:700;text-align:center;">Here is your credential for ${safeName}!</h1>
+                <p style="max-width:500px;margin:0 auto 24px;color:#34443a;font-size:16px;line-height:1.7;text-align:center;">${intro}</p>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:500px;">
+                  ${actions.map(action => `<tr>
+                    <td style="padding:0 0 10px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f5faf6" style="width:100%;background-color:#f5faf6;border:1px solid #d6e8da;border-radius:10px;">
+                        <tr>
+                          <td valign="middle" width="68" style="width:68px;padding:12px 0 12px 14px;">
+                            <table role="presentation" width="46" height="46" cellpadding="0" cellspacing="0" border="0" bgcolor="#e7f3eb" style="width:46px;height:46px;background-color:#e7f3eb;border-radius:50%;">
+                              <tr><td align="center" valign="middle" style="color:#1a4d2e;font-size:16px;line-height:46px;font-weight:700;">${action.icon}</td></tr>
+                            </table>
+                          </td>
+                          <td valign="middle" style="padding:12px 16px 12px 8px;color:#24372a;font-size:15px;line-height:1.5;font-weight:600;">${action.text}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>`).join("")}
+                </table>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px auto 12px;">
+                  <tr>
+                    <td align="center" bgcolor="#1a4d2e" style="background-color:#1a4d2e;border-radius:8px;">
+                      <a href="${safeVerificationUrl}" style="display:inline-block;padding:17px 30px;color:#ffffff;font-size:14px;line-height:1;font-weight:700;letter-spacing:.8px;text-decoration:none;">VIEW CREDENTIAL&nbsp;&nbsp;↗</a>
                     </td>
                   </tr>
                 </table>
-                <p style="margin:0;font-size:11px;line-height:1.55;color:#777777;">Having trouble with your credential or want to unsubscribe from email list? Contact us at <a href="mailto:${safeSupportEmail}" style="color:#1688d4;text-decoration:none;">${safeSupportEmail}</a>.</p>
+                <p style="margin:0;color:#627368;font-size:12px;line-height:1.6;text-align:center;">${deliveryNote}</p>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" bgcolor="#f5faf6" style="padding:24px 28px;background-color:#f5faf6;border-top:1px solid #d6e8da;color:#627368;font-size:14px;line-height:1.6;text-align:center;">
+                Having trouble with your credential or want to unsubscribe from the email list? Contact us at<br>
+                <a href="mailto:${safeSupportEmail}" style="color:#1a4d2e;font-weight:700;text-decoration:underline;">${safeSupportEmail}</a>
               </td>
             </tr>
           </table>
@@ -139,10 +166,12 @@ const sendCertificateEmail = async ({
   }
 
   const mixedBoundary = `certifypro_mixed_${require("crypto").randomUUID()}`;
+  const relatedBoundary = `certifypro_related_${require("crypto").randomUUID()}`;
   const alternativeBoundary = `certifypro_alt_${require("crypto").randomUUID()}`;
 
   const subject = encodeMimeHeader(`Your certificate: ${certificateTitle}`);
   const filename = `${String(certificateId || "certificate").replace(/[^a-zA-Z0-9._-]/g, "_")}.pdf`;
+  const heroImage = fs.readFileSync(HERO_IMAGE_PATH);
 
   let mime = [
     `From: ${from}`,
@@ -152,6 +181,9 @@ const sendCertificateEmail = async ({
     `Content-Type: multipart/mixed; boundary="${mixedBoundary}"`,
     "",
     `--${mixedBoundary}`,
+    `Content-Type: multipart/related; boundary="${relatedBoundary}"; type="multipart/alternative"`,
+    "",
+    `--${relatedBoundary}`,
     `Content-Type: multipart/alternative; boundary="${alternativeBoundary}"`,
     "",
     `--${alternativeBoundary}`,
@@ -164,7 +196,15 @@ const sendCertificateEmail = async ({
     "Content-Transfer-Encoding: base64",
     "",
     wrapBase64(Buffer.from(email.html, "utf8").toString("base64")),
-    `--${alternativeBoundary}--`
+    `--${alternativeBoundary}--`,
+    `--${relatedBoundary}`,
+    'Content-Type: image/png; name="credential-hero.png"',
+    "Content-Transfer-Encoding: base64",
+    "Content-ID: <certificate-hero>",
+    'Content-Disposition: inline; filename="credential-hero.png"',
+    "",
+    wrapBase64(heroImage.toString("base64")),
+    `--${relatedBoundary}--`
   ].join("\r\n");
 
   if (pdfBuffer) {
