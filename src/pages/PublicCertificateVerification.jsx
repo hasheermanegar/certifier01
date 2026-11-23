@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../services/api";
+import "./PublicCertificateVerification.css";
 
 export default function PublicCertificateVerification() {
   const certificateId = decodeURIComponent(
@@ -24,62 +25,83 @@ export default function PublicCertificateVerification() {
     return () => { active = false; };
   }, [certificateId]);
 
-  const certificate = result?.certificate || result || {};
-  const verified = result?.verified === true;
-  const revoked = result?.status === "revoked" || certificate?.status === "revoked";
-
+  const certificate = result?.certificate || {};
+  const status = result?.status || certificate.status || (result?.verified ? "valid" : "invalid");
+  const verified = result?.verified === true && status === "valid";
+  const revoked = status === "revoked";
+  const expired = status === "expired";
+  const statusClass = verified ? "verified" : revoked ? "revoked" : expired ? "expired" : "invalid";
   const date = certificate.issuedAt
     ? new Date(certificate.issuedAt).toLocaleDateString()
     : "Not available";
 
+  const details = [
+    ["Certificate ID", certificate.certificateId || result?.certificateId || certificateId],
+    ["Recipient", certificate.recipientName || certificate.recipient?.name || "Not available"],
+    ["Certificate", certificate.certificateTitle || certificate.template?.title || "Not available"],
+    ["Organization", certificate.organization || "Not available"],
+    ["Issue date", date],
+    ["Status", verified ? "Valid" : revoked ? "Revoked" : expired ? "Expired" : "Not verified"]
+  ];
+
   return (
-    <main style={{minHeight:"100vh",background:"#f4f7fb",display:"grid",placeItems:"center",padding:24,fontFamily:"Arial,sans-serif",color:"#17233d"}}>
-      <section style={{width:"100%",maxWidth:620,background:"#fff",borderRadius:18,padding:"38px 30px",boxShadow:"0 12px 45px rgba(20,40,80,.09)",textAlign:"center"}}>
-        <div style={{fontSize:13,fontWeight:800,letterSpacing:2,color:"#315eea"}}>CERTIFYPRO</div>
-        <h1 style={{fontSize:29,margin:"12px 0 8px"}}>Certificate Verification</h1>
-        <p style={{color:"#64748b",margin:"0 0 28px"}}>Public certificate authenticity check</p>
+    <main className="cp-verification-page">
+      <section className={`cp-verification-card ${statusClass}`}>
+        <header className="cp-verification-brand">
+          <span>Certify</span><strong> pro</strong>
+        </header>
+        <div className="cp-verification-accent" aria-hidden="true"/>
+        <div className="cp-verification-content">
+          <div className="cp-verification-eyebrow"><span/> PUBLIC CHECK <span/></div>
+          <h1>Certificate verification</h1>
+          <p className="cp-verification-subtitle">Public certificate authenticity check</p>
 
-        {loading ? (
-          <p>Checking certificate authenticity...</p>
-        ) : error ? (
-          <>
-            <div style={{fontSize:42}}>⚠️</div>
-            <h2 style={{color:"#b45309"}}>Verification unavailable</h2>
-            <p style={{color:"#64748b"}}>{error}</p>
-          </>
-        ) : revoked || !verified ? (
-          <>
-            <div style={{fontSize:42}}>{revoked ? "⛔" : "❌"}</div>
-            <h2 style={{color:"#dc2626"}}>{revoked ? "Certificate Revoked" : "Certificate Not Verified"}</h2>
-            <p style={{color:"#64748b"}}>{result?.message || "This certificate could not be confirmed as valid."}</p>
-          </>
-        ) : (
-          <>
-            <div style={{fontSize:42}}>✓</div>
-            <h2 style={{color:"#15803d"}}>Certificate Verified</h2>
-            <p style={{color:"#64748b"}}>This certificate is authentic and currently valid.</p>
-          </>
-        )}
-
-        {!loading && result && (
-          <div style={{marginTop:26,textAlign:"left",borderTop:"1px solid #e8edf5",paddingTop:18}}>
-            {[
-              ["Certificate ID", certificate.certificateId || certificateId],
-              ["Recipient", certificate.recipientName || certificate.recipient?.name || "Not available"],
-              ["Certificate", certificate.certificateTitle || certificate.template?.title || "Not available"],
-              ["Organization", certificate.organization || "Not available"],
-              ["Issue date", date],
-              ["Status", revoked ? "Revoked" : verified ? "Valid" : "Not verified"]
-            ].map(([label,value]) => (
-              <div key={label} style={{display:"flex",justifyContent:"space-between",gap:16,padding:"12px 0",borderBottom:"1px solid #eef1f6",fontSize:14}}>
-                <strong style={{color:"#64748b"}}>{label}</strong>
-                <span style={{textAlign:"right",overflowWrap:"anywhere"}}>{value}</span>
-              </div>
-            ))}
+          <div className={`cp-verification-result ${statusClass}`} aria-live="polite">
+            {loading ? (
+              <>
+                <span className="cp-verification-spinner" aria-hidden="true"/>
+                <h2>Checking certificate</h2>
+                <p>Checking certificate authenticity...</p>
+              </>
+            ) : error ? (
+              <>
+                <span className="cp-verification-symbol" aria-hidden="true">!</span>
+                <h2>Verification unavailable</h2>
+                <p>{error}</p>
+              </>
+            ) : (
+              <>
+                <span className="cp-verification-symbol" aria-hidden="true">
+                  {verified ? "✓" : revoked ? "×" : expired ? "!" : "×"}
+                </span>
+                <h2>
+                  {verified ? "Certificate verified" :
+                    revoked ? "Certificate revoked" :
+                      expired ? "Certificate expired" : "Certificate not verified"}
+                </h2>
+                <p>{result?.message || (verified
+                  ? "This certificate is authentic and currently valid."
+                  : "This certificate could not be verified.")}</p>
+              </>
+            )}
           </div>
-        )}
 
-        <p style={{fontSize:12,color:"#94a3b8",marginTop:28}}>CertifyPro · Digital Certificate Verification</p>
+          {!loading && !error && (
+            <dl className="cp-verification-details">
+              {details.map(([label, value]) => (
+                <div className="cp-verification-detail" key={label}>
+                  <dt>{label}</dt>
+                  <dd>{label === "Status" ? (
+                    <span className={`cp-verification-status ${statusClass}`}>
+                      <i aria-hidden="true"/> {value}
+                    </span>
+                  ) : value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+        </div>
+        <footer className="cp-verification-footer">CERTIFY PRO · DIGITAL CERTIFICATE VERIFICATION</footer>
       </section>
     </main>
   );
