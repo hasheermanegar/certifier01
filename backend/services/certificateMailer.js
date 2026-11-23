@@ -1,10 +1,12 @@
-const nodemailer = require("nodemailer");
+const DEFAULT_SUPPORT_EMAIL = "hasheermanegar@gmail.com";
 
 const isConfigured = () =>
-  Boolean(process.env.SMTP_HOST && process.env.SMTP_USER &&
-    process.env.SMTP_PASS && process.env.MAIL_FROM);
-
-const DEFAULT_SUPPORT_EMAIL = "hasheermanegar@gmail.com";
+  Boolean(
+    process.env.GMAIL_CLIENT_ID &&
+    process.env.GMAIL_CLIENT_SECRET &&
+    process.env.GMAIL_REFRESH_TOKEN &&
+    process.env.MAIL_FROM
+  );
 
 function buildCertificateEmail({ recipientName, verificationUrl }) {
   const name = recipientName || "you";
@@ -87,30 +89,121 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
   return { text, html };
 }
 
-const sendCertificateEmail = async ({ to, recipientName, certificateTitle, verificationUrl, certificateId, pdfBuffer }) => {
+
+function encodeMimeHeader(value) {
+  return `=?UTF-8?B?${Buffer.from(String(value || ""), "utf8").toString("base64")}?=`;
+}
+
+function wrapBase64(value) {
+  return String(value).match(/.{1,76}/g)?.join("\r\n") || "";
+}
+
+function safeHeader(value) {
+  return String(value || "").replace(/[\r\n]+/g, " ").trim();
+}
+
+const sendCertificateEmail = async ({
+  to,
+  recipientName,
+  certificateTitle,
+  verificationUrl,
+  certificateId,
+  pdfBuffer
+}) => {
   if (!isConfigured()) return { status: "not_configured" };
 
-  const port = Number(process.env.SMTP_PORT || 587);
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port,
-    secure: String(process.env.SMTP_SECURE || "false").toLowerCase() === "true",
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: process.env.GMAIL_CLIENT_ID,
+      client_secret: process.env.GMAIL_CLIENT_SECRET,
+      refresh_token: process.env.GMAIL_REFRESH_TOKEN,
+      grant_type: "refresh_token"
+    })
   });
-  const email = buildCertificateEmail({ recipientName, verificationUrl });
 
-  await transporter.sendMail({
-    from: process.env.MAIL_FROM,
-    to,
-    subject: `Your certificate: ${certificateTitle}`,
-    text: email.text,
-    html: email.html,
-    attachments: pdfBuffer ? [{
-      filename: (certificateId || "certificate") + ".pdf",
-      content: pdfBuffer,
-      contentType: "application/pdf"
-    }] : []
-  });
+  const tokenData = await tokenResponse.json().catch(() => ({}));
+
+  if (!tokenResponse.ok || !tokenData.access_token) {
+    const reason = tokenData.error_description || tokenData.error || "OAuth token request failed";
+    throw new Error(`Gmail OAuth authentication failed: ${safeHeader(reason)}`);
+  }
+
+  const email = buildCertificateEmail({ recipientName, verificationUrl });
+  const from = safeHeader(process.env.MAIL_FROM);
+  const recipient = safeHeader(to);
+
+  if (!recipient || /[<>]/.test(recipient)) {
+    throw new Error("Invalid certificate recipient email address.");
+  }
+
+  const mixedBoundary = `certifypro_mixed_${require("crypto").randomUUID()}`;
+  const alternativeBoundary = `certifypro_alt_${require("crypto").randomUUID()}`;
+
+  const subject = encodeMimeHeader(`Your certificate: ${certificateTitle}`);
+  const filename = `${String(certificateId || "certificate").replace(/[^a-zA-Z0-9._-]/g, "_")}.pdf`;
+
+  let mime = [
+    `From: ${from}`,
+    `To: ${recipient}`,
+    `Subject: ${subject}`,
+    "MIME-Version: 1.0",
+    `Content-Type: multipart/mixed; boundary="${mixedBoundary}"`,
+    "",
+    `--${mixedBoundary}`,
+    `Content-Type: multipart/alternative; boundary="${alternativeBoundary}"`,
+    "",
+    `--${alternativeBoundary}`,
+    'Content-Type: text/plain; charset="UTF-8"',
+    "Content-Transfer-Encoding: base64",
+    "",
+    wrapBase64(Buffer.from(email.text, "utf8").toString("base64")),
+    `--${alternativeBoundary}`,
+    'Content-Type: text/html; charset="UTF-8"',
+    "Content-Transfer-Encoding: base64",
+    "",
+    wrapBase64(Buffer.from(email.html, "utf8").toString("base64")),
+    `--${alternativeBoundary}--`
+  ].join("\r\n");
+
+  if (pdfBuffer) {
+    const pdf = Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from(pdfBuffer);
+
+    mime += [
+      "",
+      `--${mixedBoundary}`,
+      "Content-Type: application/pdf",
+      "Content-Transfer-Encoding: base64",
+      `Content-Disposition: attachment; filename="${filename}"`,
+      "",
+      wrapBase64(pdf.toString("base64"))
+    ].join("\r\n");
+  }
+
+  mime += `\r\n--${mixedBoundary}--\r\n`;
+
+  const gmailResponse = await fetch(
+    "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${tokenData.access_token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        raw: Buffer.from(mime, "utf8").toString("base64url")
+      })
+    }
+  );
+
+  const gmailData = await gmailResponse.json().catch(() => ({}));
+
+  if (!gmailResponse.ok) {
+    const reason = gmailData.error?.message || "Gmail API rejected the message";
+    throw new Error(`Gmail API email delivery failed (${gmailResponse.status}): ${safeHeader(reason)}`);
+  }
+
   return { status: "sent" };
 };
 

@@ -329,7 +329,7 @@ const resendCertificateEmail = async (req, res) => {
     return res.json({ success: true, emailStatus: certificate.emailStatus, emailSentAt: certificate.emailSentAt });
   } catch (error) {
     console.error("Resend certificate email error:", error.message);
-    return res.status(500).json({ success: false, message: "Could not send certificate email. Check SMTP configuration." });
+    return res.status(500).json({ success: false, message: "Could not send certificate email. Check Gmail API configuration." });
   }
 };
 
@@ -625,6 +625,18 @@ const downloadCertificatePDF = async (req, res) => {
         } else if (element.textTransform === "lowercase") {
           displayText = displayText.toLowerCase();
         }
+
+        // Replace characters unsupported by PDF standard fonts without
+        // changing the saved certificate design.
+        displayText = Array.from(displayText).map(character => {
+          if (character === "\n" || character === "\r") return character;
+          try {
+            selectedFont.encodeText(character);
+            return character;
+          } catch {
+            return "*";
+          }
+        }).join("");
 
         const lines = displayText.split(/\r?\n/);
         const lineHeight = fontSize * (Number(element.lineHeight) || 1.25);
