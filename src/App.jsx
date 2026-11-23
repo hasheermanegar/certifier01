@@ -249,7 +249,7 @@ const resendIssuedCertificate=async id=>{
 if(window.location.pathname.startsWith("/verify/"))return <PublicCertificateVerification/>;
 if(loading||authChecking)return <LoadingScreen/>;
 if(!user)return <AuthScreen onLogin={setUser}/>;
-return <div className="app-shell"><Sidebar page={page} setPage={setPage} mobileOpen={mobileNavOpen} onClose={()=>setMobileNavOpen(false)}/><main className="main-area"><Suspense fallback={<LoadingScreen/>}>{page!=="Designer"&&<Topbar title={page} onCreate={()=>setModal(true)} onMenu={()=>setMobileNavOpen(open=>!open)} mobileNavOpen={mobileNavOpen}/>}
+return <div className="app-shell"><Sidebar page={page} setPage={setPage} mobileOpen={mobileNavOpen} onClose={()=>setMobileNavOpen(false)}/><main className="main-area"><Suspense fallback={<LoadingScreen/>}>{page!=="Designer"&&<Topbar title={page} onCreate={()=>setModal(true)} onHelp={()=>setPage("Help Center")} onMenu={()=>setMobileNavOpen(open=>!open)} mobileNavOpen={mobileNavOpen}/>}
 {page==="Dashboard"&&<Dashboard designs={designs} credentials={credentials} onDesign={createDesign} onIssue={()=>setModal(true)} setPage={setPage}/>}
 {page==="Design Templates"&&<DesignTemplates designs={designs} onCreate={createDesign} onOpen={openDesign} onDelete={deleteDesign} onUseTemplate={design=>{setActive(structuredClone(design));setPage("Designer");}}/>}
 {page==="Credential Templates"&&<CredentialTemplates designs={designs} onCreate={createDesign} onOpen={openDesign}/>}

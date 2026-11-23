@@ -1,6 +1,7 @@
 export default function Topbar({
   title,
   onCreate,
+  onHelp,
   onMenu,
   mobileNavOpen = false,
 }) {
@@ -18,8 +19,8 @@ export default function Topbar({
       </button>
       <div>Workspace / <b>{title}</b></div>
       <div>
-        <button className="quiet">◎ Help</button>
-        <button className="btn-primary" onClick={onCreate}>＋ Issue credential</button>
+        <button type="button" className="quiet" onClick={onHelp}>◎ Help</button>
+        <button type="button" className="btn-primary" onClick={onCreate}>＋ Issue credential</button>
       </div>
     </header>
   );
