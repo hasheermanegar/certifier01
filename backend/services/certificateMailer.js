@@ -1,5 +1,7 @@
 const nodemailer = require("nodemailer");
+const path = require("path");
 let transporter;
+const HERO_IMAGE_PATH = path.join(__dirname, "../email-assets/credential-hero.png");
 
 const isConfigured = () =>
   Boolean(process.env.SMTP_HOST && process.env.SMTP_USER &&
@@ -54,49 +56,8 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
               </td>
             </tr>
             <tr>
-              <td align="center" bgcolor="#26744f" style="padding:42px 18px;background-color:#26744f;">
-                <table role="presentation" width="360" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:360px;">
-                  <tr>
-                    <td align="center" bgcolor="#f9fffb" style="padding:13px;background-color:#f9fffb;border:2px solid #d8efdf;border-radius:12px;">
-                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border:1px dashed #7cb28a;">
-                        <tr>
-                          <td align="center" style="padding:19px 16px 8px;">
-                            <span style="display:inline-block;width:90px;height:9px;background-color:#1a4d2e;border-radius:8px;font-size:0;line-height:0;">&nbsp;</span>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td align="center" style="padding:0 16px 14px;">
-                            <span style="display:inline-block;width:52px;height:5px;background-color:#4c9a66;border-radius:5px;font-size:0;line-height:0;">&nbsp;</span>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td align="center" style="padding:0 20px 10px;">
-                            <span style="display:block;height:10px;background-color:#183d29;border-radius:8px;font-size:0;line-height:0;">&nbsp;</span>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td align="center" style="padding:0 30px 8px;">
-                            <span style="display:block;height:5px;background-color:#d6eadb;border-radius:5px;font-size:0;line-height:0;">&nbsp;</span>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td align="center" style="padding:0 42px 18px;">
-                            <span style="display:block;height:5px;background-color:#d6eadb;border-radius:5px;font-size:0;line-height:0;">&nbsp;</span>
-                          </td>
-                        </tr>
-                      </table>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td align="center" style="padding-top:12px;">
-                      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                        <tr>
-                          <td align="center" valign="middle" width="48" height="48" bgcolor="#11b85b" style="width:48px;height:48px;background-color:#11b85b;border:4px solid #d5f8e2;border-radius:50%;color:#ffffff;font-size:28px;line-height:48px;font-weight:700;">✓</td>
-                        </tr>
-                      </table>
-                    </td>
-                  </tr>
-                </table>
+              <td align="center" bgcolor="#26744f" style="padding:0;background-color:#26744f;">
+                <img src="cid:certificate-hero" width="620" alt="Certificate with an award seal" style="display:block;width:100%;max-width:620px;height:auto;border:0;">
               </td>
             </tr>
             <tr>
@@ -177,11 +138,20 @@ const sendCertificateEmail = async ({ to, recipientName, certificateTitle, verif
     subject: `Your certificate: ${certificateTitle}`,
     text: email.text,
     html: email.html,
-    attachments: pdfBuffer ? [{
-      filename: (certificateId || "certificate") + ".pdf",
-      content: pdfBuffer,
-      contentType: "application/pdf"
-    }] : []
+    attachments: [
+      ...(pdfBuffer ? [{
+        filename: (certificateId || "certificate") + ".pdf",
+        content: pdfBuffer,
+        contentType: "application/pdf"
+      }] : []),
+      {
+        filename: "credential-hero.png",
+        path: HERO_IMAGE_PATH,
+        cid: "certificate-hero",
+        contentType: "image/png",
+        contentDisposition: "inline"
+      }
+    ]
   });
   return { status: "sent" };
 };
