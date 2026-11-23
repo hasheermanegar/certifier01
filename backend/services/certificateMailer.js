@@ -15,19 +15,19 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
   const safeSupportEmail = escapeHtml(supportEmail);
   const intro = "Your achievement is available online so you can retrieve it anywhere, anytime, and use it in a variety of ways:";
   const actions = [
-    "add it to your LinkedIn profile to get better job opportunities",
-    "share it on social media to showcase your skills",
-    "download the attached certificate PDF for printing"
+    { icon: "in", text: "Add it to your LinkedIn profile to get better job opportunities" },
+    { icon: "↗", text: "Share it on social media to showcase your skills" },
+    { icon: "↓", text: "Download the attached PDF for printing" }
   ];
-  const deliveryNote = "The View Credential button opens the certificate verification page. A PDF copy of your certificate is attached to this email.";
+  const deliveryNote = "A PDF copy of your certificate is attached to this email.";
   const footer = `Having trouble with your credential or want to unsubscribe from email list? Contact us at ${supportEmail}.`;
 
   const text = [
-    `Congratulations, here is your certificate for ${name}!`,
+    `Congratulations! Here is your credential for ${name}.`,
     "",
     intro,
     "",
-    ...actions.map(action => `- ${action}`),
+    ...actions.map(action => `- ${action.text}`),
     "",
     deliveryNote,
     "",
@@ -43,32 +43,103 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Your credential is ready</title>
   </head>
-  <body style="margin:0;padding:0;background-color:#f1f1f1;font-family:Arial,Helvetica,sans-serif;color:#333333;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:#f1f1f1;">
+  <body style="width:100%;margin:0;padding:0;background-color:#eaf4ed;font-family:Arial,Helvetica,sans-serif;color:#102216;-webkit-text-size-adjust:100%;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#eaf4ed" style="width:100%;background-color:#eaf4ed;">
       <tr>
-        <td align="center" style="padding:40px 12px;">
-          <table role="presentation" width="430" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:430px;background-color:#ffffff;border:1px solid #e4e4e4;">
+        <td align="center" style="padding:24px 12px;">
+          <table role="presentation" width="620" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:620px;background-color:#ffffff;border:1px solid #d6e8da;border-radius:18px;overflow:hidden;">
             <tr>
-              <td align="center" style="padding:30px 28px 18px;font-size:27px;line-height:1.2;font-weight:700;letter-spacing:-.7px;color:#1A4D2E;">
-                Certify Pro
+              <td align="center" bgcolor="#102216" style="padding:24px 18px;background-color:#102216;font-size:29px;line-height:1.2;font-weight:700;letter-spacing:-.8px;">
+                <span style="color:#ffffff;">Certify</span><span style="color:#11d452;"> pro</span>
               </td>
             </tr>
             <tr>
-              <td style="padding:0 38px 34px;">
-                <h1 style="margin:0 0 16px;font-size:18px;line-height:1.45;font-weight:700;color:#333333;">Congratulations, here is your certificate for ${safeName}!</h1>
-                <p style="margin:0 0 16px;font-size:13px;line-height:1.55;color:#555555;">${intro}</p>
-                <ul style="margin:0 0 18px;padding-left:18px;font-size:13px;line-height:1.55;color:#555555;">
-                  ${actions.map(action => `<li style="padding:1px 0;">${action}</li>`).join("")}
-                </ul>
-                <p style="margin:0 0 18px;font-size:12px;line-height:1.55;color:#555555;">${deliveryNote}</p>
-                <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 15px;">
+              <td align="center" bgcolor="#26744f" style="padding:42px 18px;background-color:#26744f;">
+                <table role="presentation" width="360" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:360px;">
                   <tr>
-                    <td align="center" bgcolor="#2f63d8" style="background-color:#2f63d8;border-radius:28px;">
-                      <a href="${safeVerificationUrl}" style="display:inline-block;padding:15px 26px;color:#ffffff;font-size:14px;line-height:1;font-weight:700;text-decoration:none;">View Credential</a>
+                    <td align="center" bgcolor="#f9fffb" style="padding:13px;background-color:#f9fffb;border:2px solid #d8efdf;border-radius:12px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border:1px dashed #7cb28a;">
+                        <tr>
+                          <td align="center" style="padding:19px 16px 8px;">
+                            <span style="display:inline-block;width:90px;height:9px;background-color:#1a4d2e;border-radius:8px;font-size:0;line-height:0;">&nbsp;</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td align="center" style="padding:0 16px 14px;">
+                            <span style="display:inline-block;width:52px;height:5px;background-color:#4c9a66;border-radius:5px;font-size:0;line-height:0;">&nbsp;</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td align="center" style="padding:0 20px 10px;">
+                            <span style="display:block;height:10px;background-color:#183d29;border-radius:8px;font-size:0;line-height:0;">&nbsp;</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td align="center" style="padding:0 30px 8px;">
+                            <span style="display:block;height:5px;background-color:#d6eadb;border-radius:5px;font-size:0;line-height:0;">&nbsp;</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td align="center" style="padding:0 42px 18px;">
+                            <span style="display:block;height:5px;background-color:#d6eadb;border-radius:5px;font-size:0;line-height:0;">&nbsp;</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding-top:12px;">
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td align="center" valign="middle" width="48" height="48" bgcolor="#11b85b" style="width:48px;height:48px;background-color:#11b85b;border:4px solid #d5f8e2;border-radius:50%;color:#ffffff;font-size:28px;line-height:48px;font-weight:700;">✓</td>
+                        </tr>
+                      </table>
                     </td>
                   </tr>
                 </table>
-                <p style="margin:0;font-size:11px;line-height:1.55;color:#777777;">Having trouble with your credential or want to unsubscribe from email list? Contact us at <a href="mailto:${safeSupportEmail}" style="color:#1688d4;text-decoration:none;">${safeSupportEmail}</a>.</p>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:38px 34px 40px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 16px;">
+                  <tr>
+                    <td valign="middle" width="36" style="width:36px;border-top:1px solid #4c9a66;font-size:0;line-height:0;">&nbsp;</td>
+                    <td align="center" style="padding:0 12px;color:#1a4d2e;font-size:13px;line-height:1.3;font-weight:700;letter-spacing:2px;">CONGRATULATIONS</td>
+                    <td valign="middle" width="36" style="width:36px;border-top:1px solid #4c9a66;font-size:0;line-height:0;">&nbsp;</td>
+                  </tr>
+                </table>
+                <h1 style="max-width:500px;margin:0 0 20px;color:#102216;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:1.2;font-weight:700;text-align:center;">Here is your credential for ${safeName}!</h1>
+                <p style="max-width:500px;margin:0 auto 24px;color:#34443a;font-size:16px;line-height:1.7;text-align:center;">${intro}</p>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:500px;">
+                  ${actions.map(action => `<tr>
+                    <td style="padding:0 0 10px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f5faf6" style="width:100%;background-color:#f5faf6;border:1px solid #d6e8da;border-radius:10px;">
+                        <tr>
+                          <td valign="middle" width="68" style="width:68px;padding:12px 0 12px 14px;">
+                            <table role="presentation" width="46" height="46" cellpadding="0" cellspacing="0" border="0" bgcolor="#e7f3eb" style="width:46px;height:46px;background-color:#e7f3eb;border-radius:50%;">
+                              <tr><td align="center" valign="middle" style="color:#1a4d2e;font-size:23px;line-height:46px;font-weight:700;">${action.icon}</td></tr>
+                            </table>
+                          </td>
+                          <td valign="middle" style="padding:12px 16px 12px 8px;color:#24372a;font-size:15px;line-height:1.5;font-weight:600;">${action.text}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>`).join("")}
+                </table>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px auto 12px;">
+                  <tr>
+                    <td align="center" bgcolor="#1a4d2e" style="background-color:#1a4d2e;border-radius:8px;">
+                      <a href="${safeVerificationUrl}" style="display:inline-block;padding:17px 30px;color:#ffffff;font-size:14px;line-height:1;font-weight:700;letter-spacing:.8px;text-decoration:none;">VIEW CREDENTIAL&nbsp;&nbsp;↗</a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:0;color:#627368;font-size:12px;line-height:1.6;text-align:center;">${deliveryNote}</p>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" bgcolor="#f5faf6" style="padding:24px 28px;background-color:#f5faf6;border-top:1px solid #d6e8da;color:#627368;font-size:14px;line-height:1.6;text-align:center;">
+                Having trouble with your credential or want to unsubscribe from the email list? Contact us at<br>
+                <a href="mailto:${safeSupportEmail}" style="color:#1a4d2e;font-weight:700;text-decoration:underline;">${safeSupportEmail}</a>
               </td>
             </tr>
           </table>
