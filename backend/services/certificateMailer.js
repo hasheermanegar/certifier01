@@ -2,7 +2,12 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const DEFAULT_SUPPORT_EMAIL = "hasheermanegar@gmail.com";
-const HERO_IMAGE_PATH = path.join(__dirname, "../email-assets/credential-hero.png");
+const EMAIL_IMAGE_PATHS = {
+  "certificate-hero": path.join(__dirname, "../email-assets/credential-hero.png"),
+  "linkedin-badge": path.join(__dirname, "../email-assets/linkedin-badge.png"),
+  "share-badge": path.join(__dirname, "../email-assets/share-badge.png"),
+  "download-badge": path.join(__dirname, "../email-assets/download-badge.png")
+};
 
 const isConfigured = () =>
   Boolean(
@@ -20,9 +25,9 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
   const safeSupportEmail = escapeHtml(supportEmail);
   const intro = "Your achievement is available online so you can retrieve it anywhere, anytime, and use it in a variety of ways:";
   const actions = [
-    { icon: "in", text: "Add it to your LinkedIn profile to get better job opportunities" },
-    { icon: "↗", text: "Share it on social media to showcase your skills" },
-    { icon: "↓", text: "Download it in PDF format for printing" }
+    { image: "linkedin-badge", text: "Add it to your LinkedIn profile to get better job opportunities" },
+    { image: "share-badge", text: "Share it on social media to showcase your skills" },
+    { image: "download-badge", text: "Download it in PDF format for printing" }
   ];
   const deliveryNote = "A PDF copy of your certificate is attached to this email.";
   const footer = `Having trouble with your credential or want to unsubscribe from email list? Contact us at ${supportEmail}.`;
@@ -80,9 +85,7 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
                       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f5faf6" style="width:100%;background-color:#f5faf6;border:1px solid #d6e8da;border-radius:10px;">
                         <tr>
                           <td valign="middle" width="68" style="width:68px;padding:12px 0 12px 14px;">
-                            <table role="presentation" width="46" height="46" cellpadding="0" cellspacing="0" border="0" bgcolor="#e7f3eb" style="width:46px;height:46px;background-color:#e7f3eb;border-radius:50%;">
-                              <tr><td align="center" valign="middle" style="color:#1a4d2e;font-size:16px;line-height:46px;font-weight:700;">${action.icon}</td></tr>
-                            </table>
+                            <img src="cid:${action.image}" width="46" height="46" alt="" style="display:block;width:46px;height:46px;border:0;">
                           </td>
                           <td valign="middle" style="padding:12px 16px 12px 8px;color:#24372a;font-size:15px;line-height:1.5;font-weight:600;">${action.text}</td>
                         </tr>
@@ -93,7 +96,7 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px auto 12px;">
                   <tr>
                     <td align="center" bgcolor="#1a4d2e" style="background-color:#1a4d2e;border-radius:8px;">
-                      <a href="${safeVerificationUrl}" style="display:inline-block;padding:17px 30px;color:#ffffff;font-size:14px;line-height:1;font-weight:700;letter-spacing:.8px;text-decoration:none;">VIEW CREDENTIAL&nbsp;&nbsp;↗</a>
+                      <a href="${safeVerificationUrl}" style="display:inline-block;padding:17px 30px;color:#ffffff;font-size:14px;line-height:1.3;font-weight:700;letter-spacing:.8px;text-decoration:none;">VIEW CREDENTIAL</a>
                     </td>
                   </tr>
                 </table>
@@ -171,7 +174,10 @@ const sendCertificateEmail = async ({
 
   const subject = encodeMimeHeader(`Your certificate: ${certificateTitle}`);
   const filename = `${String(certificateId || "certificate").replace(/[^a-zA-Z0-9._-]/g, "_")}.pdf`;
-  const heroImage = fs.readFileSync(HERO_IMAGE_PATH);
+  const inlineImages = Object.entries(EMAIL_IMAGE_PATHS).map(([cid, imagePath]) => ({
+    cid,
+    image: fs.readFileSync(imagePath)
+  }));
 
   let mime = [
     `From: ${from}`,
@@ -197,13 +203,15 @@ const sendCertificateEmail = async ({
     "",
     wrapBase64(Buffer.from(email.html, "utf8").toString("base64")),
     `--${alternativeBoundary}--`,
-    `--${relatedBoundary}`,
-    'Content-Type: image/png; name="credential-hero.png"',
-    "Content-Transfer-Encoding: base64",
-    "Content-ID: <certificate-hero>",
-    'Content-Disposition: inline; filename="credential-hero.png"',
-    "",
-    wrapBase64(heroImage.toString("base64")),
+    ...inlineImages.flatMap(({ cid, image }) => [
+      `--${relatedBoundary}`,
+      `Content-Type: image/png; name="${cid}.png"`,
+      "Content-Transfer-Encoding: base64",
+      `Content-ID: <${cid}>`,
+      `Content-Disposition: inline; filename="${cid}.png"`,
+      "",
+      wrapBase64(image.toString("base64"))
+    ]),
     `--${relatedBoundary}--`
   ].join("\r\n");
 

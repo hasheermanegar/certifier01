@@ -17,10 +17,18 @@ test("builds the branded certificate email with dynamic content", () => {
   assert.match(html, /Add it to your LinkedIn profile/);
   assert.match(html, /Share it on social media/);
   assert.match(html, /Download it in PDF format/);
+  assert.match(html, /src="cid:linkedin-badge"/);
+  assert.match(html, /src="cid:share-badge"/);
+  assert.match(html, /src="cid:download-badge"/);
+  assert.doesNotMatch(html, /VIEW CREDENTIAL[^<]*↗/);
   assert.match(text, /View Credential: https:\/\/example\.com\/verify\/CERT-123/);
+  assert.match(buildCertificateEmail({
+    recipientName: "Morgan",
+    verificationUrl: "https://example.com/verify/CERT-456"
+  }).html, /Here is your credential for Morgan!/);
 });
 
-test("sends the reference hero inline while preserving the certificate PDF attachment", async () => {
+test("sends the reference hero and matching badges inline with the certificate PDF", async () => {
   const env = {
     GMAIL_CLIENT_ID: process.env.GMAIL_CLIENT_ID,
     GMAIL_CLIENT_SECRET: process.env.GMAIL_CLIENT_SECRET,
@@ -54,13 +62,21 @@ test("sends the reference hero inline while preserving the certificate PDF attac
 
     assert.match(rawMessage, /Content-Type: multipart\/related/);
     assert.match(rawMessage, /Content-ID: <certificate-hero>/);
-    assert.match(rawMessage, /Content-Disposition: inline; filename="credential-hero\.png"/);
+    assert.match(rawMessage, /Content-Disposition: inline; filename="certificate-hero\.png"/);
     assert.match(rawMessage, /Content-Disposition: attachment; filename="CERT-123\.pdf"/);
 
-    const heroPart = rawMessage.split("Content-ID: <certificate-hero>\r\n")[1].split("\r\n--certifypro_related_")[0];
-    const heroBase64 = heroPart.split("\r\n\r\n")[1].replace(/\s/g, "");
-    const expectedHero = fs.readFileSync(path.join(__dirname, "../email-assets/credential-hero.png"));
-    assert.deepEqual(Buffer.from(heroBase64, "base64"), expectedHero);
+    const inlineImages = {
+      "certificate-hero": "credential-hero.png",
+      "linkedin-badge": "linkedin-badge.png",
+      "share-badge": "share-badge.png",
+      "download-badge": "download-badge.png"
+    };
+    for (const [cid, filename] of Object.entries(inlineImages)) {
+      const imagePart = rawMessage.split(`Content-ID: <${cid}>\r\n`)[1].split("\r\n--certifypro_related_")[0];
+      const imageBase64 = imagePart.split("\r\n\r\n")[1].replace(/\s/g, "");
+      const expectedImage = fs.readFileSync(path.join(__dirname, `../email-assets/${filename}`));
+      assert.deepEqual(Buffer.from(imageBase64, "base64"), expectedImage);
+    }
 
     const htmlPart = rawMessage.match(/Content-Type: text\/html; charset="UTF-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n([\s\S]*?)\r\n--certifypro_alt_/);
     assert.ok(htmlPart);

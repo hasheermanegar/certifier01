@@ -237,7 +237,10 @@ async function main() {
     "Public verification rejects expired certificate",
     expiredVerification.response.status === 200 &&
     expiredVerification.body.verified === false &&
-    expiredVerification.body.status === "expired"
+    expiredVerification.body.status === "expired" &&
+    expiredVerification.body.certificate?.recipientName === "Original Test Recipient" &&
+    expiredVerification.body.certificate?.certificateTitle === "Backend Testing Certificate" &&
+    expiredVerification.body.certificate?.status === "expired"
   );
 
   const revoke = await api(

@@ -227,9 +227,9 @@ const verifyCertificate = async (req, res) => {
         success: true,
         verified: false,
         message: "This certificate has expired",
-        certificateId: certificate.certificateId,
         status: "expired",
-        expiresAt: certificate.expiresAt
+        expiresAt: certificate.expiresAt,
+        certificate: certificateDetails
       });
     }
 
