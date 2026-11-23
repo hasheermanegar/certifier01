@@ -51,7 +51,9 @@ export default function Sidebar({ page, setPage, mobileOpen = false, onClose = (
     {mobileOpen && <button type="button" className="mobile-nav-backdrop" aria-label="Close navigation menu" onClick={onClose}/>}
     <aside id="primary-navigation" className={`sidebar ${mobileOpen ? "mobile-open" : ""} ${collapsed ? "is-collapsed" : ""}`}>
       <div className="sidebar-brand-row">
-        <div className="brand"><b className="brand-mark">C</b>certify<span>pro</span></div>
+        <div className="brand">
+          <span className="brand-name">VistaraCertifications</span>
+        </div>
         <button
           type="button"
           className="sidebar-collapse-toggle"

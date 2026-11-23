@@ -625,7 +625,7 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
               </div>
             </div>
           </div>
-          <div className="cp-canvas-footer"><span>CertifyPro Studio</span><span>{d.elements.length} elements · {d.width} × {d.height}px</span></div>
+          <div className="cp-canvas-footer"><span>VistaraCertifications Studio</span><span>{d.elements.length} elements · {d.width} × {d.height}px</span></div>
         </div>
       </main>
       <aside id="certificate-properties" className={`cp-properties cp-properties-v2 ${mobilePanel==="properties"?"cp-mobile-open":""}`}>

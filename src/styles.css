@@ -525,7 +525,7 @@
 }
 
 
-/* CertifyPro Studio redesign */
+/* VistaraCertifications Studio redesign */
 .cp-designer{height:100vh;min-height:600px;background:#f4f6fa;color:#1d2940}
 .cp-designer-top{height:66px;min-height:66px;background:#fff;border-bottom:1px solid #e7ebf1;display:flex;align-items:center;justify-content:space-between;padding:0 22px;gap:15px;z-index:4}
 .cp-top-left,.cp-top-actions{display:flex;align-items:center;gap:13px;min-width:0}
@@ -616,7 +616,7 @@
 @media(max-width:700px){.cp-designer-top{padding:0 9px}.cp-top-actions{gap:4px}.cp-preview-button,.cp-zoom-label{display:none}.cp-editor-body{grid-template-columns:52px minmax(0,1fr)}.cp-editor-panel{display:none}.cp-workspace-toolbar{padding:0 8px}.cp-canvas-scroll{justify-content:flex-start;align-items:flex-start;padding:18px}.cp-back span{display:none}}
 
 
-/* CertifyPro — polished certificate template gallery */
+/* VistaraCertifications — polished certificate template gallery */
 .template-gallery {
   padding: 20px 16px !important;
   background: #fff;
@@ -814,7 +814,7 @@
   }
 }
 
-/* CertifyPro Elements panel */
+/* VistaraCertifications Elements panel */
 .cp-elements-panel { padding: 20px 16px; }
 .cp-elements-heading h3 { font: 800 16px Manrope,sans-serif; margin: 0 0 6px; }
 .cp-elements-heading p { color: #8994a6; font-size: 10px; line-height: 1.5; }
@@ -932,7 +932,7 @@
 .cp-delete-template{position:absolute;right:4px;top:4px;border:0;border-radius:50%;width:22px;height:22px;background:#fff;color:#d33;box-shadow:0 1px 5px #0002;cursor:pointer}
 
 /* =====================================================
-   CERTIFYPRO - GLOBAL APPLICATION DESIGN SYSTEM
+   VistaraCertifications - GLOBAL APPLICATION DESIGN SYSTEM
    ===================================================== */
 
 :root {
@@ -3869,7 +3869,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   }
 }
 
-/* CertifyPro: clean certificate-only printing */
+/* VistaraCertifications: clean certificate-only printing */
 @media print {
   @page {
     size: auto;
@@ -3932,7 +3932,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 
 
-/* CertifyPro Studio - inline text editor toolbar */
+/* VistaraCertifications Studio - inline text editor toolbar */
 .cp-inline-toolbar {
   position: relative;
   z-index: 20;
@@ -4053,7 +4053,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 
 
-/* CERTIFYPRO: CLEAN CERTIFICATE-ONLY PRINT PREVIEW */
+/* VistaraCertifications: CLEAN CERTIFICATE-ONLY PRINT PREVIEW */
 @page {
   size: A4 portrait;
   margin: 0;
@@ -4111,7 +4111,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   }
 }
 
-/* CertifyPro in-page certificate preview */
+/* VistaraCertifications in-page certificate preview */
 .cp-preview-overlay {
   position: fixed;
   inset: 0;
@@ -4288,7 +4288,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 
 
-/* CertifyPro quick-search command palette */
+/* VistaraCertifications quick-search command palette */
 .quick-search {
   width: calc(100% - 28px);
   margin: 12px 14px 20px;
@@ -4401,7 +4401,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 
 
-/* CertifyPro responsive application layout */
+/* VistaraCertifications responsive application layout */
 @media (max-width: 1100px) {
   .cp-editor-body {
     grid-template-columns: 64px 250px minmax(0,1fr) 240px;
@@ -4589,7 +4589,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 
 
-/* CertifyPro final responsive refinements */
+/* VistaraCertifications final responsive refinements */
 .cp-credentials-page,
 .cp-credential-records,
 .cp-credential-table-wrap {
@@ -4621,7 +4621,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 
 
-/* CERTIFYPRO PREMIUM TEMPLATE GALLERY UPGRADE */
+/* VistaraCertifications PREMIUM TEMPLATE GALLERY UPGRADE */
 .template-gallery {
   padding: 22px 18px 28px !important;
   background: linear-gradient(180deg, #ffffff 0%, #fcfdff 100%);
@@ -4835,7 +4835,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 
 
-/* CERTIFYPRO LAYER LOCK STATES */
+/* VistaraCertifications LAYER LOCK STATES */
 .cp-layer-card.locked {
   border-color: #e4e8f0;
 }
@@ -4848,7 +4848,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 
 
-/* CertifyPro canvas zoom overflow fix */
+/* VistaraCertifications canvas zoom overflow fix */
 .cp-canvas-scroll {
   display: flex;
   justify-content: flex-start;
@@ -4869,7 +4869,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 
 
-/* CertifyPro refined background image control and reliable zoom scrolling */
+/* VistaraCertifications refined background image control and reliable zoom scrolling */
 .cp-canvas-scroll {
   display: block !important;
   overflow: auto !important;
@@ -5018,9 +5018,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   font-size: 9px;
 }
 
-/* CERTIFYPRO STUDIO UPGRADE 2026-11-20 */
+/* VistaraCertifications STUDIO UPGRADE 2026-11-20 */
 
-/* CERTIFYPRO STUDIO UPGRADE 2026-11-20 */
+/* VistaraCertifications STUDIO UPGRADE 2026-11-20 */
 .cp-designer {
   background: #f3f5fa;
   color: #202b40;
@@ -5161,9 +5161,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   .template-gallery .template-grid { gap: 10px; }
 }
 
-/* CERTIFYPRO DISTINCT TEMPLATE LAYOUTS */
+/* VistaraCertifications DISTINCT TEMPLATE LAYOUTS */
 
-/* CERTIFYPRO DISTINCT TEMPLATE LAYOUTS */
+/* VistaraCertifications DISTINCT TEMPLATE LAYOUTS */
 .template-preview[data-layout="0"] .template-preview-inner {
   border-style: double !important;
   border-width: 4px !important;
@@ -7431,6 +7431,14 @@ button[class*="add"]:hover {
   padding: 0;
 }
 
+.brand-name {
+  color: #1A4D2E;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -.6px;
+  white-space: nowrap;
+}
+
 .sidebar-collapse-toggle {
   display: inline-grid;
   flex: 0 0 30px;
@@ -7464,16 +7472,17 @@ button[class*="add"]:hover {
     width: 26px;
   }
 
-  .sidebar.is-collapsed .brand {
-    justify-content: center;
-    flex: 0 0 30px;
-    overflow: hidden;
-    font-size: 0;
+  .sidebar.is-collapsed .brand-name {
+    display: none;
   }
 
-  .sidebar.is-collapsed .brand-mark {
-    flex: 0 0 30px;
-    font-size: 17px;
+  .sidebar.is-collapsed .brand {
+    justify-content: center;
+    flex: 0 0 38px;
+    width: 38px;
+    height: 36px;
+    overflow: hidden;
+    font-size: 0;
   }
 
   .sidebar.is-collapsed .workspace-switch,

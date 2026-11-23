@@ -48,7 +48,7 @@ export default function PublicCertificateVerification() {
     <main className="cp-verification-page">
       <section className={`cp-verification-card ${statusClass}`}>
         <header className="cp-verification-brand">
-          <span>Certify</span><strong> pro</strong>
+          <span>VistaraCertifications</span>
         </header>
         <div className="cp-verification-accent" aria-hidden="true"/>
         <div className="cp-verification-content">
@@ -101,7 +101,7 @@ export default function PublicCertificateVerification() {
             </dl>
           )}
         </div>
-        <footer className="cp-verification-footer">CERTIFY PRO · DIGITAL CERTIFICATE VERIFICATION</footer>
+        <footer className="cp-verification-footer">VISTARACERTIFICATIONS · DIGITAL CERTIFICATE VERIFICATION</footer>
       </section>
     </main>
   );

@@ -193,7 +193,7 @@ const downloadIssuedCertificate=async credential=>{
     const url=URL.createObjectURL(blob);
     const link=document.createElement("a");
     link.href=url;
-    link.download=`CertifyPro-${credential.certificateId}.pdf`;
+    link.download=`VistaraCertifications-${credential.certificateId}.pdf`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -279,41 +279,226 @@ return <div className="app-shell"><Sidebar page={page} setPage={setPage} mobileO
 {page==="Pathways"&&<Pathways pathways={pathways} designs={designs} recipients={recipients} onSave={p=>setPathways(prev=>prev.some(x=>x.id===p.id)?prev.map(x=>x.id===p.id?p:x):[p,...prev])} onDelete={id=>setPathways(prev=>prev.filter(p=>p.id!==id))}/>}
 {page==="Designer"&&active&&<CertificateDesigner design={active} onSave={saveDesign} onClose={()=>{setActive(null);setPage("Design Templates")}}/>}
 {!["Dashboard","Design Templates","Credential Templates","All Credentials","Recipients","Bulk Issuing","Pathways","Analytics","Email Templates","Forms","Integrations","Getting Started","Credential Usage","Settings","Help Center","Designer"].includes(page)&&<div className="page-content"><div className="empty-state"><h2>{page}</h2><p>This workspace section is ready to be connected.</p><button className="btn-primary" onClick={()=>setPage("Dashboard")}>Back to dashboard</button></div></div>}</Suspense></main>
-{modal&&<IssueModal designs={designs} recipients={recipients} close={()=>setModal(false)} submit={async v=>{try{const design=designs.find(d=>d.id===v.templateId);const recipient=recipients.find(r=>r.id===v.recipientId);if(!design?.backendId||!recipient?.backendId){window.alert("Please select a saved design and a recipient synced with the server.");return;}const result=await api.issueCertificate(design.backendId,recipient.backendId,{title:design.name||"Certificate"});const issued=result.certificate;setCredentials(p=>[{id:issued.id||issued._id||uid(),backendId:issued.id||issued._id,certificateId:issued.certificateId,recipient:recipient.name,email:recipient.email,title:design.name,templateId:design.id,recipientId:recipient.id,status:issued.status||"valid",issuedAt:issued.issuedAt||new Date().toISOString(),verificationUrl:issued.verificationUrl,qrCode:issued.qrCode,emailStatus:issued.emailStatus||"not_configured",emailSentAt:issued.emailSentAt},...p]);setModal(false);setPage("All Credentials");window.alert(emailDeliveryMessage(issued.emailStatus,recipient.email));}catch(error){window.alert("Could not issue certificate: "+error.message);}}}/> }</div>}
+{modal&&<IssueModal designs={designs} recipients={recipients} close={()=>setModal(false)} submit={async v=>{
+  try {
+    const design = designs.find(d => d.id === v.templateId);
+    if (!design?.backendId) {
+      throw new Error("Please select a saved design template.");
+    }
+
+    let recipient;
+
+    if (v.recipientMode === "new") {
+      const name = v.name.trim();
+      const email = v.email.trim().toLowerCase();
+      const organization = v.organization.trim();
+
+      if (!name || !email) {
+        throw new Error("Enter the recipient's name and email address.");
+      }
+
+      const existing = recipients.find(r =>
+        (r.email || "").trim().toLowerCase() === email
+      );
+
+      if (existing) {
+        if (!existing.backendId) {
+          throw new Error("This email already exists locally. Refresh the page and try again.");
+        }
+        recipient = existing;
+      } else {
+        const result = await api.createRecipient({ name, email, organization });
+        const saved = result.recipient;
+        recipient = {
+          ...saved,
+          id: saved._id,
+          backendId: saved._id
+        };
+        setRecipients(previous => [recipient, ...previous]);
+      }
+    } else {
+      recipient = recipients.find(r => r.id === v.recipientId);
+    }
+
+    if (!recipient?.backendId) {
+      throw new Error("Please select a recipient synced with the server.");
+    }
+
+    const result = await api.issueCertificate(
+      design.backendId,
+      recipient.backendId,
+      { title: v.title.trim() || design.name || "Certificate" }
+    );
+
+    const issued = result.certificate;
+    setCredentials(previous => [{
+      id: issued.id || issued._id || uid(),
+      backendId: issued.id || issued._id,
+      certificateId: issued.certificateId,
+      recipient: recipient.name,
+      email: recipient.email,
+      title: v.title.trim() || design.name || "Certificate",
+      templateId: design.id,
+      recipientId: recipient.id,
+      status: issued.status || "valid",
+      issuedAt: issued.issuedAt || new Date().toISOString(),
+      verificationUrl: issued.verificationUrl,
+      qrCode: issued.qrCode,
+      emailStatus: issued.emailStatus || "not_configured",
+      emailSentAt: issued.emailSentAt
+    }, ...previous]);
+
+    setModal(false);
+    setPage("All Credentials");
+    window.alert(emailDeliveryMessage(issued.emailStatus, recipient.email));
+  } catch(error) {
+    window.alert("Could not issue certificate: " + error.message);
+  }
+}}/>}</div>}
+
 function IssueModal({designs,recipients,close,submit}) {
-  const [f,S] = useState({recipientId:"",templateId:""});
+  const [f,S] = useState({
+    recipientMode: recipients.length ? "existing" : "new",
+    recipientId: "",
+    templateId: "",
+    name: "",
+    email: "",
+    organization: "",
+    title: ""
+  });
   const [saving,setSaving] = useState(false);
-  const selectedRecipient = recipients.find(r=>r.id===f.recipientId);
-  const selectedDesign = designs.find(d=>d.id===f.templateId);
+  const selectedRecipient = recipients.find(r => r.id === f.recipientId);
+  const selectedDesign = designs.find(d => d.id === f.templateId);
+
   return <div className="modal-backdrop">
     <form className="modal-card" onSubmit={async e=>{
       e.preventDefault();
-      if(!selectedRecipient||!selectedDesign)return;
+      if (!selectedDesign) return;
+      if (f.recipientMode === "existing" && !selectedRecipient) return;
+
       setSaving(true);
-      try { await submit(f); } finally { setSaving(false); }
+      try {
+        await submit(f);
+      } finally {
+        setSaving(false);
+      }
     }}>
       <div className="modal-head">
-        <div><small className="eyebrow">NEW CREDENTIAL</small><h2>Issue credential</h2></div>
+        <div>
+          <small className="eyebrow">NEW CREDENTIAL</small>
+          <h2>Issue credential</h2>
+        </div>
         <button type="button" className="icon-btn" onClick={close}>×</button>
       </div>
-      <label>Recipient
-        <select required value={f.recipientId} onChange={e=>S({...f,recipientId:e.target.value})}>
-          <option value="">Select a saved recipient</option>
-          {recipients.map(r=><option value={r.id} key={r.id}>{r.name} ({r.email})</option>)}
-        </select>
-      </label>
-      <label>Design template
-        <select required value={f.templateId} onChange={e=>S({...f,templateId:e.target.value})}>
+
+      <label>Recipient</label>
+      <div style={{display:"flex",gap:8,marginBottom:14}}>
+        <button
+          type="button"
+          className={f.recipientMode === "existing" ? "btn-primary" : "btn-secondary"}
+          onClick={()=>S({...f,recipientMode:"existing"})}
+          disabled={!recipients.length}
+        >
+          Existing recipient
+        </button>
+        <button
+          type="button"
+          className={f.recipientMode === "new" ? "btn-primary" : "btn-secondary"}
+          onClick={()=>S({...f,recipientMode:"new"})}
+        >
+          + New recipient
+        </button>
+      </div>
+
+      {f.recipientMode === "existing" ? <>
+        <label>
+          Select recipient
+          <select
+            required
+            value={f.recipientId}
+            onChange={e=>S({...f,recipientId:e.target.value})}
+          >
+            <option value="">Select a saved recipient</option>
+            {recipients.map(r=>
+              <option value={r.id} key={r.id}>{r.name} ({r.email})</option>
+            )}
+          </select>
+        </label>
+        {selectedRecipient &&
+          <p className="modal-hint">Recipient: {selectedRecipient.name} · {selectedRecipient.email}</p>
+        }
+        {!recipients.length &&
+          <p className="modal-hint">No saved recipients. Choose New recipient to enter their details.</p>
+        }
+      </> : <>
+        <label>
+          Full name
+          <input
+            required
+            value={f.name}
+            onChange={e=>S({...f,name:e.target.value})}
+            placeholder="Enter recipient's full name"
+          />
+        </label>
+        <label>
+          Email address
+          <input
+            required
+            type="email"
+            value={f.email}
+            onChange={e=>S({...f,email:e.target.value})}
+            placeholder="name@example.com"
+          />
+        </label>
+        <label>
+          Organization (optional)
+          <input
+            value={f.organization}
+            onChange={e=>S({...f,organization:e.target.value})}
+            placeholder="Enter organization"
+          />
+        </label>
+        <p className="modal-hint">The new recipient will be saved to your Recipients list before the certificate is issued.</p>
+      </>}
+
+      <label>
+        Design template
+        <select
+          required
+          value={f.templateId}
+          onChange={e=>S({...f,templateId:e.target.value})}
+        >
           <option value="">Select a saved design</option>
-          {designs.map(d=><option value={d.id} key={d.id}>{d.name||"Untitled certificate"}</option>)}
+          {designs.map(d=>
+            <option value={d.id} key={d.id}>{d.name || "Untitled certificate"}</option>
+          )}
         </select>
       </label>
-      {selectedRecipient&&<p className="modal-hint">Recipient: {selectedRecipient.name} · {selectedRecipient.email}</p>}
-      {selectedDesign&&<p className="modal-hint">Design: {selectedDesign.name||"Untitled certificate"}</p>}
-      {(!recipients.length||!designs.length)&&<p className="modal-hint">You need at least one saved recipient and one saved design before issuing.</p>}
+
+      {selectedDesign &&
+        <p className="modal-hint">Design: {selectedDesign.name || "Untitled certificate"}</p>
+      }
+
+      <label>
+        Credential title
+        <input
+          value={f.title}
+          onChange={e=>S({...f,title:e.target.value})}
+          placeholder={selectedDesign?.name || "Enter credential title"}
+        />
+      </label>
+      {!designs.length &&
+        <p className="modal-hint">You need at least one saved design before issuing.</p>
+      }
+
       <div className="modal-actions">
         <button type="button" className="btn-secondary" onClick={close}>Cancel</button>
-        <button className="btn-primary" disabled={saving||!recipients.length||!designs.length}>{saving?"Issuing...":"Issue certificate"}</button>
+        <button
+          className="btn-primary"
+          disabled={saving || !designs.length || (f.recipientMode === "existing" && !recipients.length)}
+        >
+          {saving ? "Issuing..." : "Issue certificate"}
+        </button>
       </div>
     </form>
   </div>;

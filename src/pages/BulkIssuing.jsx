@@ -142,7 +142,7 @@ export default function BulkIssuing({
       ]);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Recipients");
-      XLSX.writeFile(workbook, "certifypro-bulk-template.xlsx");
+      XLSX.writeFile(workbook, "vistaracertifications-bulk-template.xlsx");
     } catch {
       setError("Unable to create the Excel template. Please try again.");
     }
@@ -326,7 +326,7 @@ export default function BulkIssuing({
           <button className="cp-bulk-secondary" style={styles.secondary} onClick={() => {
             const csv = ["Name,Email,Credential,Status", ...report.issued.map(c => [c.recipient,c.email,c.title,c.status].map(v => `"${String(v).replace(/"/g,'""')}"`).join(","))].join("\n");
             const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-            const a = document.createElement("a"); a.href = url; a.download = "certifypro-issuing-report.csv"; a.click(); URL.revokeObjectURL(url);
+            const a = document.createElement("a"); a.href = url; a.download = "vistaracertifications-issuing-report.csv"; a.click(); URL.revokeObjectURL(url);
           }}>↓ Download issuing report</button>
         </section>
       )}

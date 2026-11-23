@@ -52,8 +52,7 @@ export default function AuthScreen({ onLogin }) {
     <main className="auth-screen">
       <section className="auth-brand-panel">
         <div className="auth-brand">
-          <span className="auth-brand-mark">C</span>
-          <span>CertifyPro</span>
+          <span className="auth-wordmark">VistaraCertifications</span>
         </div>
         <div className="auth-brand-copy">
           <span className="auth-eyebrow">DIGITAL CREDENTIAL PLATFORM</span>
@@ -66,8 +65,7 @@ export default function AuthScreen({ onLogin }) {
       <section className="auth-form-panel">
         <div className="auth-form-wrap">
           <div className="auth-mobile-brand">
-            <span className="auth-brand-mark">C</span>
-            <strong>CertifyPro</strong>
+            <span className="auth-wordmark">VistaraCertifications</span>
           </div>
 
           <span className="auth-eyebrow">{mode === "login" ? "WELCOME BACK" : "GET STARTED"}</span>

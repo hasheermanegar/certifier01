@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 const articles = [
   {
     category: "Getting Started",
-    title: "Getting started with CertifyPro",
+    title: "Getting started with VistaraCertifications",
     description: "Learn the basic steps to set up your workspace and start issuing certificates.",
     content: [
       "Open Getting Started from the sidebar.",
@@ -141,7 +141,7 @@ export default function HelpCenter() {
         <div>
           <small className="eyebrow">SUPPORT AND RESOURCES</small>
           <h1>Help Center</h1>
-          <p>Find guides and answers to help you use CertifyPro.</p>
+          <p>Find guides and answers to help you use VistaraCertifications.</p>
         </div>
       </div>
 
@@ -235,7 +235,7 @@ export default function HelpCenter() {
       <div className="table-wrap" style={{ padding: 24, marginTop: 24 }}>
         <h2 style={{ fontSize: 18, marginTop: 0 }}>Still need help?</h2>
         <p style={{ color: "#8290a7", fontSize: 13 }}>
-          Contact your CertifyPro workspace administrator for account-specific assistance.
+          Contact your VistaraCertifications workspace administrator for account-specific assistance.
         </p>
         <p style={{ fontSize: 13, marginBottom: 0 }}>
           <strong>Note:</strong> This Help Center currently contains built-in guides. Live support and ticket submission will be connected in a future backend update.

@@ -102,3 +102,28 @@
   background: #2F7D57;
   box-shadow: none;
 }
+
+.auth-brand {
+  width: fit-content;
+  padding: 8px;
+  border-radius: 8px;
+  background: #FFFFFF;
+}
+
+.auth-wordmark {
+  display: block;
+  color: #1A4D2E;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  white-space: nowrap;
+}
+
+.auth-mobile-brand {
+  justify-content: center;
+  width: 100%;
+}
+
+.auth-mobile-brand .auth-wordmark {
+  font-size: 21px;
+}

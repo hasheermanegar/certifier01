@@ -47,7 +47,7 @@ export default function AllCredentials({ credentials = [], onCreate, onUpdate, o
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = "certifypro-credentials.csv";
+    a.download = "vistaracertifications-credentials.csv";
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -284,7 +284,7 @@ export default function AllCredentials({ credentials = [], onCreate, onUpdate, o
 
         <div className="cp-credential-table-footer">
           <span>Showing <strong>{rows.length}</strong> of <strong>{credentials.length}</strong> credentials</span>
-          <span>CertifyPro Credential Management</span>
+          <span>VistaraCertifications Credential Management</span>
         </div>
       </section>
     </div>

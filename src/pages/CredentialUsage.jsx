@@ -48,7 +48,7 @@ export default function CredentialUsage({ credentials = [], designs = [] }) {
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const link = document.createElement("a");
     link.href = url;
-    link.download = "certifypro-credential-usage.csv";
+    link.download = "vistaracertifications-credential-usage.csv";
     link.click();
     URL.revokeObjectURL(url);
   }

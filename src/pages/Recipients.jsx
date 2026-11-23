@@ -70,7 +70,7 @@ export default function Recipients({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "certifypro-recipients.csv";
+    a.download = "vistaracertifications-recipients.csv";
     a.click();
     URL.revokeObjectURL(url);
   };

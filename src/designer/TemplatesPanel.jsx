@@ -192,7 +192,7 @@ function buildDistinctTemplateElements(item, orientation) {
     // Contemporary left-aligned editorial layout.
     shape("rectangle", 0, 0, 260, 790, accent);
     shape("rectangle", 260, 0, 12, 790, border);
-    text("CERTIFYPRO", 35, 75, 190, 35, 15, "#ffffff", { bold: true, spacing: 2 });
+    text("VISTARACERTIFICATIONS", 35, 75, 190, 35, 10, "#ffffff", { bold: true, spacing: 2 });
     text("AWARD\nOF\nDISTINCTION", 32, 250, 205, 190, 29, "#ffffff", { bold: true, align: "left", font: "Georgia" });
     text(item.title, 320, 100, 740, 80, 35, accent, { bold: true, align: "left", font: "Georgia" });
     text(item.subtitle, 320, 180, 740, 45, 19, border, { align: "left" });
@@ -228,7 +228,7 @@ function buildDistinctTemplateElements(item, orientation) {
     shape("hline", 330, 490, 460, 2, border);
     text("For exceptional merit and achievement", 160, 520, 800, 40, 17, ink);
     date(610);
-    text("CERTIFYPRO  •  OFFICIAL RECOGNITION", 280, 690, 560, 25, 11, accent, { spacing: 1 });
+    text("VISTARACERTIFICATIONS  •  OFFICIAL RECOGNITION", 280, 690, 560, 25, 11, accent, { spacing: 1 });
   } else if (variant === 4) {
     // Split-panel professional design.
     shape("rectangle", 0, 0, 1120, 175, accent);
@@ -257,7 +257,7 @@ function buildDistinctTemplateElements(item, orientation) {
     signatures(650);
   } else if (variant === 6) {
     // Minimal typographic composition.
-    text("CERTIFYPRO  /  RECOGNITION", 100, 75, 920, 25, 12, border, { spacing: 3 });
+    text("VISTARACERTIFICATIONS  /  RECOGNITION", 100, 75, 920, 25, 12, border, { spacing: 3 });
     text(item.title, 100, 175, 920, 75, 43, accent, { bold: true, font: "Georgia" });
     text(item.subtitle, 100, 250, 920, 42, 18, ink, { spacing: 3 });
     shape("hline", 440, 325, 240, 3, border);

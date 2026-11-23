@@ -30,7 +30,7 @@ export default function GettingStarted({ setPage }) {
       <div className="getting-hero">
         <div className="getting-hero-content">
           <div className="getting-badge"><Sparkles size={15}/> WORKSPACE ONBOARDING</div>
-          <h1>Welcome to CertifyPro!</h1>
+          <h1>Welcome to VistaraCertifications!</h1>
           <p>Let's get your digital credential workspace ready. Follow these steps to get started.</p>
         </div>
         <div className="getting-hero-icon"><Award size={65}/></div>

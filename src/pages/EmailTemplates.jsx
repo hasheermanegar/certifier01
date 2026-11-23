@@ -46,7 +46,7 @@ export default function EmailTemplates({ templates = [], onSave, onDelete }) {
       .replaceAll("{{credential_title}}", "Certificate of Achievement")
       .replaceAll("{{issue_date}}", new Date().toLocaleDateString())
       .replaceAll("{{recipient_email}}", "alex@example.com")
-      .replaceAll("{{certificate_link}}", "https://certifypro.example/verify");
+      .replaceAll("{{certificate_link}}", "https://example.com/verify");
 
   return (
     <div className="page-content cp-email-page">
