@@ -12,7 +12,7 @@ test("builds the branded certificate email with dynamic content", () => {
 
   assert.match(html, /Certify<\/span><span[^>]*> pro/);
   assert.match(html, /src="cid:certificate-hero"/);
-  assert.match(html, /Here is your credential for Avery!/);
+  assert.match(html, /# Here is your credential Avery!/);
   assert.match(html, /href="https:\/\/example\.com\/verify\/CERT-123"/);
   assert.match(html, /Add it to your LinkedIn profile/);
   assert.match(html, /Share it on social media/);
@@ -22,10 +22,18 @@ test("builds the branded certificate email with dynamic content", () => {
   assert.match(html, /src="cid:download-badge"/);
   assert.doesNotMatch(html, /VIEW CREDENTIAL[^<]*↗/);
   assert.match(text, /View Credential: https:\/\/example\.com\/verify\/CERT-123/);
-  assert.match(buildCertificateEmail({
-    recipientName: "Morgan",
+  const anotherRecipient = buildCertificateEmail({
+    recipientName: "Hasheer Manegar",
     verificationUrl: "https://example.com/verify/CERT-456"
-  }).html, /Here is your credential for Morgan!/);
+  });
+  assert.match(anotherRecipient.html, /# Here is your credential Hasheer Manegar!/);
+  assert.match(anotherRecipient.text, /^# Here is your credential Hasheer Manegar!/);
+  const hashPrefixedName = buildCertificateEmail({
+    recipientName: "# Hasheer Manegar",
+    verificationUrl: "https://example.com/verify/CERT-789"
+  });
+  assert.match(hashPrefixedName.html, /# Here is your credential Hasheer Manegar!/);
+  assert.doesNotMatch(hashPrefixedName.html, /credential for/);
 });
 
 test("sends the reference hero and matching badges inline with the certificate PDF", async () => {
@@ -82,7 +90,7 @@ test("sends the reference hero and matching badges inline with the certificate P
     assert.ok(htmlPart);
     const html = Buffer.from(htmlPart[1].replace(/\s/g, ""), "base64").toString("utf8");
     assert.match(html, /src="cid:certificate-hero"/);
-    assert.match(html, /Here is your credential for Avery!/);
+    assert.match(html, /# Here is your credential Avery!/);
   } finally {
     global.fetch = originalFetch;
     for (const [key, value] of Object.entries(env)) {

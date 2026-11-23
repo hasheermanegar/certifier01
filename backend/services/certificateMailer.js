@@ -18,7 +18,7 @@ const isConfigured = () =>
   );
 
 function buildCertificateEmail({ recipientName, verificationUrl }) {
-  const name = recipientName || "you";
+  const name = String(recipientName || "you").replace(/^\s*#+\s*/, "").trim() || "you";
   const supportEmail = process.env.SUPPORT_EMAIL?.trim() || DEFAULT_SUPPORT_EMAIL;
   const safeName = escapeHtml(name);
   const safeVerificationUrl = escapeHtml(verificationUrl);
@@ -33,7 +33,7 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
   const footer = `Having trouble with your credential or want to unsubscribe from email list? Contact us at ${supportEmail}.`;
 
   const text = [
-    `Congratulations! Here is your credential for ${name}.`,
+    `# Here is your credential ${name}!`,
     "",
     intro,
     "",
@@ -77,7 +77,7 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
                     <td valign="middle" width="36" style="width:36px;border-top:1px solid #4c9a66;font-size:0;line-height:0;">&nbsp;</td>
                   </tr>
                 </table>
-                <h1 style="max-width:500px;margin:0 0 20px;color:#102216;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:1.2;font-weight:700;text-align:center;">Here is your credential for ${safeName}!</h1>
+                <h1 style="max-width:500px;margin:0 0 20px;color:#102216;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:1.2;font-weight:700;text-align:center;"># Here is your credential ${safeName}!</h1>
                 <p style="max-width:500px;margin:0 auto 24px;color:#34443a;font-size:16px;line-height:1.7;text-align:center;">${intro}</p>
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:500px;">
                   ${actions.map(action => `<tr>
