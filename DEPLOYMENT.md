@@ -16,6 +16,21 @@ email was sent; resend reports the configuration error instead of claiming
 success. If delivery fails despite all variables being set, check the backend
 logs and the provider's sender/domain verification requirements.
 
+### Gmail SMTP
+For Gmail, set `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, and
+`SMTP_SECURE=false`. Set `SMTP_USER` to the full Gmail address and use a
+Google App Password for `SMTP_PASS` (not the regular Google account password).
+Create the App Password from the Google Account security settings after
+enabling 2-Step Verification. Set `MAIL_FROM` to that same Gmail address,
+optionally with a display name, for example
+`Certificate Team <your-address@gmail.com>`.
+
+Update these values in both the local `backend/.env` file and the backend
+hosting provider's environment/secrets settings, then restart or redeploy the
+backend. Do not commit `backend/.env` or paste an App Password into source code.
+Gmail may apply account sending limits; for larger volumes use a transactional
+mail provider instead.
+
 Certificate emails are queued after issuance or resend so PDF generation and
 SMTP delivery do not block the API response. The email status updates from
 pending to sent or failed in the credential list.

@@ -9,13 +9,15 @@ export const authStorage = {
 
 async function request(path, options = {}) {
   const token = authStorage.getToken();
-  const isPublicAuthRequest = path === "/auth/login" || path === "/auth/register";
+  const isPublicRequest = path === "/auth/login" ||
+    path === "/auth/register" ||
+    path.startsWith("/issued-certificates/verify/");
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
-      ...(token && !isPublicAuthRequest ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(token && !isPublicRequest ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });

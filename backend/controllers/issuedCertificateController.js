@@ -150,8 +150,8 @@ const verifyCertificate = async (req, res) => {
     const certificate = await IssuedCertificate.findOne({
       certificateId: req.params.certificateId
     })
-      .populate("template", "title organization description")
-      .populate("recipient", "name email organization");
+      .select("certificateId status expiresAt issuedAt recipientSnapshot templateSnapshot template recipient")
+      .lean();
 
     if (!certificate) {
       return res.status(404).json({
@@ -173,8 +173,10 @@ const verifyCertificate = async (req, res) => {
 
     if (certificate.expiresAt && certificate.expiresAt <= new Date()) {
       if (certificate.status !== "expired") {
-        certificate.status = "expired";
-        await certificate.save();
+        await IssuedCertificate.updateOne(
+          { _id: certificate._id, status: { $ne: "expired" } },
+          { $set: { status: "expired" } }
+        );
       }
       return res.json({
         success: true,
@@ -201,7 +203,21 @@ const verifyCertificate = async (req, res) => {
       certificate.recipient?.organization ||
       "";
 
-    if (!recipientName || !certificateTitle) {
+    if ((!recipientName || !certificateTitle) && (certificate.template || certificate.recipient)) {
+      await IssuedCertificate.populate(certificate, [
+        { path: "template", select: "title organization" },
+        { path: "recipient", select: "name organization" }
+      ]);
+    }
+
+    const resolvedRecipientName =
+      recipientName ||
+      certificate.recipient?.name;
+    const resolvedCertificateTitle =
+      certificateTitle ||
+      certificate.template?.title;
+
+    if (!resolvedRecipientName || !resolvedCertificateTitle) {
       return res.status(410).json({
         success: true,
         verified: false,
@@ -215,9 +231,12 @@ const verifyCertificate = async (req, res) => {
       message: "Certificate is authentic and valid",
       certificate: {
         certificateId: certificate.certificateId,
-        recipientName,
-        certificateTitle,
-        organization,
+        recipientName: resolvedRecipientName,
+        certificateTitle: resolvedCertificateTitle,
+        organization: organization ||
+          certificate.template?.organization ||
+          certificate.recipient?.organization ||
+          "",
         issuedAt: certificate.issuedAt,
         status: certificate.status
       }
