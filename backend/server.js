@@ -54,13 +54,13 @@ app.use("/api/recipients", recipientRoutes);
 app.use("/api/issued-certificates", issuedCertificateRoutes);
 
 app.get("/", (req, res) => {
-  res.send("Welcome to CertifyPro Backend!");
+  res.send("Welcome to VistaraCertifications Backend!");
 });
 
 app.get("/api/health", (req, res) => {
   res.json({
     success: true,
-    message: "CertifyPro API is running!",
+    message: "VistaraCertifications API is running!",
     status: "Healthy"
   });
 });
@@ -72,7 +72,7 @@ const startServer = async () => {
   startExpiryJob();
 
   app.listen(PORT, () => {
-    console.log(`CertifyPro server running on port ${PORT}`);
+    console.log(`VistaraCertifications server running on port ${PORT}`);
   });
 };
 

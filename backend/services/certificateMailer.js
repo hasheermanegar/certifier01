@@ -33,7 +33,9 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
   const footer = `Having trouble with your credential or want to unsubscribe from email list? Contact us at ${supportEmail}.`;
 
   const text = [
-    `# Here is your credential ${name}!`,
+    "VistaraCertifications",
+    "",
+    `Here is your credential ${name}!`,
     "",
     intro,
     "",
@@ -51,20 +53,20 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Your credential is ready</title>
+    <title>Your VistaraCertifications credential is ready</title>
   </head>
-  <body style="width:100%;margin:0;padding:0;background-color:#eaf4ed;font-family:Arial,Helvetica,sans-serif;color:#102216;-webkit-text-size-adjust:100%;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#eaf4ed" style="width:100%;background-color:#eaf4ed;">
+  <body style="width:100%;margin:0;padding:0;background-color:#f8fcf9;font-family:Arial,Helvetica,sans-serif;color:#0d1b12;-webkit-text-size-adjust:100%;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f8fcf9" style="width:100%;background-color:#f8fcf9;">
       <tr>
         <td align="center" style="padding:24px 12px;">
-          <table role="presentation" width="620" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:620px;background-color:#ffffff;border:1px solid #d6e8da;border-radius:18px;overflow:hidden;">
+          <table role="presentation" width="620" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:620px;background-color:#ffffff;border:1px solid #d1e6d9;border-radius:8px;overflow:hidden;">
             <tr>
-              <td align="center" bgcolor="#102216" style="padding:24px 18px;background-color:#102216;font-size:29px;line-height:1.2;font-weight:700;letter-spacing:-.8px;">
-                <span style="color:#ffffff;">Certify</span><span style="color:#11d452;"> pro</span>
+              <td align="center" bgcolor="#ffffff" style="padding:10px 18px;background-color:#ffffff;">
+                <span style="color:#1a4d2e;font-size:22px;font-weight:800;letter-spacing:-.5px;">VistaraCertifications</span>
               </td>
             </tr>
             <tr>
-              <td align="center" bgcolor="#26744f" style="padding:0;background-color:#26744f;">
+              <td align="center" bgcolor="#1a4d2e" style="padding:0;background-color:#1a4d2e;">
                 <img src="cid:certificate-hero" width="620" alt="Certificate with an award seal" style="display:block;width:100%;max-width:620px;height:auto;border:0;">
               </td>
             </tr>
@@ -77,17 +79,17 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
                     <td valign="middle" width="36" style="width:36px;border-top:1px solid #4c9a66;font-size:0;line-height:0;">&nbsp;</td>
                   </tr>
                 </table>
-                <h1 style="max-width:500px;margin:0 0 20px;color:#102216;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:1.2;font-weight:700;text-align:center;"># Here is your credential ${safeName}!</h1>
-                <p style="max-width:500px;margin:0 auto 24px;color:#34443a;font-size:16px;line-height:1.7;text-align:center;">${intro}</p>
+                <h1 style="max-width:500px;margin:0 0 20px;color:#0d1b12;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:1.2;font-weight:700;text-align:center;">Here is your credential ${safeName}!</h1>
+                <p style="max-width:500px;margin:0 auto 24px;color:#0d1b12;font-size:16px;line-height:1.7;text-align:center;">${intro}</p>
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:500px;">
                   ${actions.map(action => `<tr>
                     <td style="padding:0 0 10px;">
-                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f5faf6" style="width:100%;background-color:#f5faf6;border:1px solid #d6e8da;border-radius:10px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f8fcf9" style="width:100%;background-color:#f8fcf9;border:1px solid #d1e6d9;border-radius:8px;">
                         <tr>
                           <td valign="middle" width="68" style="width:68px;padding:12px 0 12px 14px;">
                             <img src="cid:${action.image}" width="46" height="46" alt="" style="display:block;width:46px;height:46px;border:0;">
                           </td>
-                          <td valign="middle" style="padding:12px 16px 12px 8px;color:#24372a;font-size:15px;line-height:1.5;font-weight:600;">${action.text}</td>
+                          <td valign="middle" style="padding:12px 16px 12px 8px;color:#0d1b12;font-size:15px;line-height:1.5;font-weight:600;">${action.text}</td>
                         </tr>
                       </table>
                     </td>
@@ -95,8 +97,8 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
                 </table>
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px auto 12px;">
                   <tr>
-                    <td align="center" bgcolor="#1a4d2e" style="background-color:#1a4d2e;border-radius:8px;">
-                      <a href="${safeVerificationUrl}" style="display:inline-block;padding:17px 30px;color:#ffffff;font-size:14px;line-height:1.3;font-weight:700;letter-spacing:.8px;text-decoration:none;">VIEW CREDENTIAL</a>
+                    <td align="center" bgcolor="#1a4d2e" style="background-color:#1a4d2e;border-radius:6px;">
+                      <a href="${safeVerificationUrl}" style="display:inline-block;padding:14px 24px;color:#ffffff;font-size:14px;line-height:1.3;font-weight:700;letter-spacing:.7px;text-decoration:none;">VIEW CREDENTIAL</a>
                     </td>
                   </tr>
                 </table>
@@ -104,7 +106,7 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
               </td>
             </tr>
             <tr>
-              <td align="center" bgcolor="#f5faf6" style="padding:24px 28px;background-color:#f5faf6;border-top:1px solid #d6e8da;color:#627368;font-size:14px;line-height:1.6;text-align:center;">
+              <td align="center" bgcolor="#e7f3eb" style="padding:24px 28px;background-color:#e7f3eb;border-top:1px solid #d1e6d9;color:#4c9a66;font-size:14px;line-height:1.6;text-align:center;">
                 Having trouble with your credential or want to unsubscribe from the email list? Contact us at<br>
                 <a href="mailto:${safeSupportEmail}" style="color:#1a4d2e;font-weight:700;text-decoration:underline;">${safeSupportEmail}</a>
               </td>
@@ -161,7 +163,9 @@ const sendCertificateEmail = async ({
   }
 
   const email = buildCertificateEmail({ recipientName, verificationUrl });
-  const from = safeHeader(process.env.MAIL_FROM);
+  const configuredFrom = safeHeader(process.env.MAIL_FROM);
+  const senderAddress = configuredFrom.match(/<\s*([^<>]+)\s*>/)?.[1] || configuredFrom;
+  const from = `VistaraCertifications <${senderAddress.trim()}>`;
   const recipient = safeHeader(to);
 
   if (!recipient || /[<>]/.test(recipient)) {

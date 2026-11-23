@@ -10,9 +10,10 @@ test("builds the branded certificate email with dynamic content", () => {
     verificationUrl: "https://example.com/verify/CERT-123"
   });
 
-  assert.match(html, /Certify<\/span><span[^>]*> pro/);
+  assert.match(html, /VistaraCertifications/);
+  assert.doesNotMatch(html, /CertifyPro|vistara-logo|cid:vistara-logo/);
   assert.match(html, /src="cid:certificate-hero"/);
-  assert.match(html, /# Here is your credential Avery!/);
+  assert.match(html, /Here is your credential Avery!/);
   assert.match(html, /href="https:\/\/example\.com\/verify\/CERT-123"/);
   assert.match(html, /Add it to your LinkedIn profile/);
   assert.match(html, /Share it on social media/);
@@ -26,13 +27,13 @@ test("builds the branded certificate email with dynamic content", () => {
     recipientName: "Hasheer Manegar",
     verificationUrl: "https://example.com/verify/CERT-456"
   });
-  assert.match(anotherRecipient.html, /# Here is your credential Hasheer Manegar!/);
-  assert.match(anotherRecipient.text, /^# Here is your credential Hasheer Manegar!/);
+  assert.match(anotherRecipient.html, /Here is your credential Hasheer Manegar!/);
+  assert.match(anotherRecipient.text, /^VistaraCertifications\n\nHere is your credential Hasheer Manegar!/);
   const hashPrefixedName = buildCertificateEmail({
     recipientName: "# Hasheer Manegar",
     verificationUrl: "https://example.com/verify/CERT-789"
   });
-  assert.match(hashPrefixedName.html, /# Here is your credential Hasheer Manegar!/);
+  assert.match(hashPrefixedName.html, /Here is your credential Hasheer Manegar!/);
   assert.doesNotMatch(hashPrefixedName.html, /credential for/);
 });
 
@@ -48,7 +49,7 @@ test("sends the reference hero and matching badges inline with the certificate P
   process.env.GMAIL_CLIENT_ID = "test-client";
   process.env.GMAIL_CLIENT_SECRET = "test-secret";
   process.env.GMAIL_REFRESH_TOKEN = "test-refresh-token";
-  process.env.MAIL_FROM = "Certify Pro <mailer@example.com>";
+  process.env.MAIL_FROM = "VistaraCertifications <mailer@example.com>";
   global.fetch = async (url, options) => {
     if (url === "https://oauth2.googleapis.com/token") {
       return { ok: true, json: async () => ({ access_token: "test-access-token" }) };
@@ -90,7 +91,7 @@ test("sends the reference hero and matching badges inline with the certificate P
     assert.ok(htmlPart);
     const html = Buffer.from(htmlPart[1].replace(/\s/g, ""), "base64").toString("utf8");
     assert.match(html, /src="cid:certificate-hero"/);
-    assert.match(html, /# Here is your credential Avery!/);
+    assert.match(html, /Here is your credential Avery!/);
   } finally {
     global.fetch = originalFetch;
     for (const [key, value] of Object.entries(env)) {
