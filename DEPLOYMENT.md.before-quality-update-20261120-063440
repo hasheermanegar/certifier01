@@ -1,0 +1,48 @@
+# CertifyPro deployment preparation
+
+## Backend environment
+Configure these variables in your hosting provider's secret/environment settings:
+PORT, MONGODB_URI, JWT_SECRET, FRONTEND_URL,
+SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS, MAIL_FROM.
+
+Never upload backend/.env or real secrets to Git.
+
+## Backend
+Working directory: backend
+Install: npm install
+Start: npm start
+Health check: /api/health
+
+## Frontend
+Install: npm install
+Build: npm run build
+Publish the generated dist directory using a static hosting provider.
+Configure the frontend API proxy or production API base URL for your chosen host.
+
+## Before going live
+- Use HTTPS for frontend and backend.
+- Set FRONTEND_URL to the exact production frontend origin.
+- Use a production MongoDB database and restrict network access.
+- Use a strong unique JWT_SECRET.
+- Verify the SMTP sender domain and configure SPF, DKIM and DMARC.
+- Test login, issuance, PDF attachments, public verification and revocation.
+- Configure backups and monitoring.
+
+Actual deployment requires selecting hosting providers and a domain.
+
+
+## Automated project verification
+
+From the repository root:
+
+- `npm run build` builds the production frontend.
+- `npm test` runs the backend end-to-end test.
+- `npm run verify` builds the frontend, checks backend JavaScript syntax, and runs the backend end-to-end test.
+
+The end-to-end test uses the configured MongoDB database and removes its temporary test records after completion. Run it against a development/test database, not a production database.
+
+## Current quality and release checks
+
+The frontend build and backend integration tests are separate from ESLint. The current ESLint run reports existing issues in active source files and backup files. These require targeted cleanup and review; they are not automatically suppressed by the verification command.
+
+Before production release, manually verify mobile layouts, automatic expiry after the scheduler interval, bulk upload limits, and the complete login-to-issuance workflow. Configure production hosting, HTTPS, domain email authentication, monitoring, and database backups before going live.
