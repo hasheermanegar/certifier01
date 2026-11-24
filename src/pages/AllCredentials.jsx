@@ -1,30 +1,31 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Search, Download, Plus, Award, CheckCircle2,
   Ban, Clock3, Filter, RotateCcw, CalendarDays,
-  Users, ChevronDown, FileCheck2
+  Users, ChevronDown, FileCheck2, Mail
 } from "lucide-react";
 
-export default function AllCredentials({ credentials = [], onCreate, onUpdate }) {
+function getCredentialStatus(c) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (String(c.status || "").toLowerCase() === "revoked") return "Revoked";
+  if (String(c.status || "").toLowerCase() === "expired") return "Expired";
+  if (c.expiresAt && String(c.expiresAt).slice(0, 10) < today) return "Expired";
+  return "Issued";
+}
+
+export default function AllCredentials({ credentials = [], onCreate, onUpdate, onDownload, onRevoke, onResend }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
   const [payment, setPayment] = useState("All");
   const [editing, setEditing] = useState(null);
-
-  const today = new Date().toISOString().slice(0, 10);
-
-  const getStatus = c => {
-    if (c.status === "Revoked") return "Revoked";
-    if (c.expiresAt && c.expiresAt < today) return "Expired";
-    return "Issued";
-  };
+  const [resending, setResending] = useState(null);
 
   const rows = useMemo(() => credentials.filter(c => {
     const term = search.toLowerCase();
     const matchesSearch =
       `${c.recipient || ""} ${c.email || ""} ${c.title || ""} ${c.id || ""}`
         .toLowerCase().includes(term);
-    const matchesStatus = status === "All" || getStatus(c) === status;
+    const matchesStatus = status === "All" || getCredentialStatus(c) === status;
     const matchesPayment = payment === "All" ||
       (c.paymentStatus || "Unverified") === payment;
     return matchesSearch && matchesStatus && matchesPayment;
@@ -37,7 +38,7 @@ export default function AllCredentials({ credentials = [], onCreate, onUpdate })
     const data = rows.map(c => [
       c.recipient, c.email, c.title,
       c.issuedAt ? new Date(c.issuedAt).toLocaleDateString() : "",
-      getStatus(c), c.paymentStatus || "Unverified", c.expiresAt || ""
+      getCredentialStatus(c), c.paymentStatus || "Unverified", c.expiresAt || ""
     ]);
     const csv = [headers, ...data].map(row =>
       row.map(value => `"${String(value ?? "").replace(/"/g, '""')}"`).join(",")
@@ -46,16 +47,16 @@ export default function AllCredentials({ credentials = [], onCreate, onUpdate })
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = "certifypro-credentials.csv";
+    a.download = "vistaracertifications-credentials.csv";
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const counts = {
     total: credentials.length,
-    issued: credentials.filter(c => getStatus(c) === "Issued").length,
-    revoked: credentials.filter(c => getStatus(c) === "Revoked").length,
-    expired: credentials.filter(c => getStatus(c) === "Expired").length
+    issued: credentials.filter(c => getCredentialStatus(c) === "Issued").length,
+    revoked: credentials.filter(c => getCredentialStatus(c) === "Revoked").length,
+    expired: credentials.filter(c => getCredentialStatus(c) === "Expired").length
   };
 
   const stats = [
@@ -93,7 +94,6 @@ export default function AllCredentials({ credentials = [], onCreate, onUpdate })
 
       <div className="cp-credential-stats">
         {stats.map(item => {
-          const Icon = item.icon;
           return (
             <div className="cp-credential-stat" key={item.label}>
               <div className="cp-credential-stat-content">
@@ -169,7 +169,8 @@ export default function AllCredentials({ credentials = [], onCreate, onUpdate })
             </thead>
             <tbody>
               {rows.map(c => {
-                const currentStatus = getStatus(c);
+                const currentStatus = getCredentialStatus(c);
+                const emailPending = c.emailStatus === "pending" || c.emailStatus === "sending";
                 return (
                   <tr key={c.id}>
                     <td>
@@ -180,6 +181,7 @@ export default function AllCredentials({ credentials = [], onCreate, onUpdate })
                         <div>
                           <strong>{c.recipient || "Unknown recipient"}</strong>
                           <span>{c.email || "No email provided"}</span>
+                          {c.emailStatus && <small className="cp-email-status">Email: {String(c.emailStatus).replace(/_/g, " ")}</small>}
                         </div>
                       </div>
                     </td>
@@ -230,23 +232,39 @@ export default function AllCredentials({ credentials = [], onCreate, onUpdate })
                       )}
                     </td>
                     <td>
-                      {currentStatus === "Revoked" ? (
-                        <button className="cp-row-action restore" onClick={() => {
-                          if (window.confirm("Restore this credential?")) {
-                            update(c.id, { status: "Issued" });
-                          }
-                        }}>
-                          <RotateCcw size={13}/> Restore
-                        </button>
-                      ) : (
-                        <button className="cp-row-action revoke" onClick={() => {
-                          if (window.confirm("Revoke this credential?")) {
-                            update(c.id, { status: "Revoked" });
-                          }
-                        }}>
-                          <Ban size={13}/> Revoke
-                        </button>
-                      )}
+                      <div style={{display:"flex",gap:"6px",alignItems:"center",flexWrap:"wrap"}}>
+                        {c.certificateId && <>
+                          <button className="cp-row-action" onClick={()=>onDownload?.(c)}>
+                            <Download size={13}/> PDF
+                          </button>
+                          {onResend && currentStatus === "Issued" && <button
+                            className="cp-row-action"
+                            disabled={resending === c.id || emailPending}
+                            onClick={async()=>{
+                              setResending(c.id);
+                              try { await onResend(c.id); }
+                              catch(error) { window.alert("Could not resend email: " + error.message); }
+                              finally { setResending(null); }
+                            }}>
+                            <Mail size={13}/> {resending === c.id||c.emailStatus==="sending" ? "Sending..." : emailPending ? "Email queued" : "Resend email"}
+                          </button>}
+                          {c.verificationUrl && <a className="cp-row-action" href={`${window.location.origin}/verify/${encodeURIComponent(c.certificateId)}`} target="_blank" rel="noreferrer">
+                            <CheckCircle2 size={13}/> Verify
+                          </a>}
+                        </>}
+                        {currentStatus === "Revoked" ? (
+                          <span className="cp-credential-status revoked">Revoked</span>
+                        ) : (
+                          <button className="cp-row-action revoke" onClick={() => {
+                            if (window.confirm("Revoke this credential?")) {
+                              if(c.certificateId) onRevoke?.(c.id);
+                              else update(c.id, { status: "Revoked" });
+                            }
+                          }}>
+                            <Ban size={13}/> Revoke
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -266,7 +284,7 @@ export default function AllCredentials({ credentials = [], onCreate, onUpdate })
 
         <div className="cp-credential-table-footer">
           <span>Showing <strong>{rows.length}</strong> of <strong>{credentials.length}</strong> credentials</span>
-          <span>CertifyPro Credential Management</span>
+          <span>VistaraCertification Credential Management</span>
         </div>
       </section>
     </div>

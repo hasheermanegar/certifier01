@@ -1,0 +1,259 @@
+.cp-verification-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: start center;
+  padding: 24px 16px;
+  background: #f2faf4;
+  color: #172a1e;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.cp-verification-card {
+  width: min(100%, 520px);
+  overflow: hidden;
+  border: 1px solid #d5e9db;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 16px 42px rgba(20, 73, 43, .08);
+}
+
+.cp-verification-brand {
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  background: #fff;
+  text-align: center;
+}
+
+.cp-verification-brand span {
+  color: #1A4D2E;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -.5px;
+}
+
+.cp-verification-accent {
+  height: 7px;
+  background: repeating-linear-gradient(
+    135deg,
+    #1a4d2e 0 5px,
+    #68b67e 5px 8px,
+    #e7f3eb 8px 11px
+  );
+}
+
+.cp-verification-content {
+  padding: 24px 30px 26px;
+}
+
+.cp-verification-eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #276344;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.cp-verification-eyebrow span {
+  width: 24px;
+  height: 1px;
+  background: #8eb99a;
+}
+
+.cp-verification-content > h1 {
+  margin: 12px 0 5px;
+  color: #13261a;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 27px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.cp-verification-subtitle {
+  margin: 0;
+  color: #73847a;
+  font-size: 12px;
+  text-align: center;
+}
+
+.cp-verification-result {
+  padding: 22px 0 18px;
+  text-align: center;
+}
+
+.cp-verification-symbol,
+.cp-verification-spinner {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  margin: 0 auto 9px;
+  border: 5px solid #e6f4eb;
+  border-radius: 50%;
+  background: #11b85b;
+  color: #fff;
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cp-verification-result.revoked .cp-verification-symbol,
+.cp-verification-result.invalid .cp-verification-symbol {
+  border-color: #fae9e7;
+  background: #bd3026;
+}
+
+.cp-verification-result.expired .cp-verification-symbol {
+  border-color: #fff1d6;
+  background: #c17a13;
+}
+
+.cp-verification-spinner {
+  border: 4px solid #d7ecdd;
+  border-top-color: #159655;
+  background: transparent;
+  animation: cp-verification-spin .8s linear infinite;
+}
+
+@keyframes cp-verification-spin {
+  to { transform: rotate(360deg); }
+}
+
+.cp-verification-result h2 {
+  margin: 0 0 5px;
+  color: #246442;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+}
+
+.cp-verification-result.revoked h2,
+.cp-verification-result.invalid h2,
+.cp-verification-result.revoked .cp-verification-symbol,
+.cp-verification-result.invalid .cp-verification-symbol {
+  color: #b52e25;
+}
+
+.cp-verification-result.expired h2 {
+  color: #a76a0e;
+}
+
+.cp-verification-result p {
+  margin: 0;
+  color: #64746a;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.cp-verification-details {
+  margin: 0;
+  border-top: 1px solid #e0eee4;
+}
+
+.cp-verification-detail {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(0, 1.5fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  border-bottom: 1px solid #e7f0e9;
+  font-size: 12px;
+}
+
+.cp-verification-detail dt {
+  color: #65806d;
+  font-weight: 700;
+}
+
+.cp-verification-detail dd {
+  min-width: 0;
+  margin: 0;
+  color: #263d2e;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.cp-verification-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 20px;
+  background: #e8f5ec;
+  color: #267345;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.cp-verification-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.cp-verification-status.revoked,
+.cp-verification-status.invalid {
+  background: #fff0ee;
+  color: #b52e25;
+}
+
+.cp-verification-status.expired {
+  background: #fff6e6;
+  color: #a76a0e;
+}
+
+.cp-verification-footer {
+  padding: 14px 12px;
+  border-top: 1px solid #dcece0;
+  background: #f5faf6;
+  color: #4a8060;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  .cp-verification-page {
+    padding: 12px;
+  }
+
+  .cp-verification-content {
+    padding: 22px 18px;
+  }
+
+  .cp-verification-content > h1 {
+    font-size: 24px;
+  }
+
+  .cp-verification-detail {
+    grid-template-columns: minmax(90px, .8fr) minmax(0, 1.2fr);
+    gap: 8px;
+    font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cp-verification-spinner {
+    animation: none;
+  }
+}
+
+/* Official Vistara verification branding */
+.cp-verification-brand {
+  gap: 10px;
+}
+
+.cp-verification-brand .vistara-verification-icon {
+  display: block;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
+}

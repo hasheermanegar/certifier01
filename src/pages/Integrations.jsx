@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { Plug, KeyRound, Webhook, Copy, Plus, Trash2, Eye, EyeOff, CheckCircle2, Circle, ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plug, KeyRound, Webhook, Copy, Plus, Trash2, Eye, EyeOff, ExternalLink } from "lucide-react";
 
 const services = [
   { id: "google", name: "Google Sheets", category: "Productivity", description: "Export recipient and credential data to spreadsheets.", icon: "📊" },
-  { id: "zapier", name: "Zapier", category: "Automation", description: "Connect CertifyPro to thousands of applications.", icon: "⚡" },
+  { id: "zapier", name: "Zapier", category: "Automation", description: "Connect VistaraCertification to thousands of applications.", icon: "⚡" },
   { id: "slack", name: "Slack", category: "Communication", description: "Receive notifications about certificate activity.", icon: "💬" },
   { id: "sheets", name: "Webhooks", category: "Developer tools", description: "Send real-time event notifications to your server.", icon: "🔗" },
   { id: "resend", name: "Resend", category: "Email", description: "Prepare email delivery integration.", icon: "✉️" },
-  { id: "make", name: "Make", category: "Automation", description: "Build automated workflows with CertifyPro.", icon: "⚙️" }
+  { id: "make", name: "Make", category: "Automation", description: "Build automated workflows with VistaraCertification.", icon: "⚙️" }
 ];
 
 const read = key => {
@@ -79,7 +79,7 @@ export default function Integrations() {
         <div>
           <small className="eyebrow">DEVELOPER WORKSPACE</small>
           <h1>Integrations</h1>
-          <p>Connect CertifyPro with your tools, applications and workflows.</p>
+          <p>Connect VistaraCertification with your tools, applications and workflows.</p>
         </div>
       </div>
 
@@ -182,8 +182,8 @@ export default function Integrations() {
 
       {tab === "docs" && (
         <div className="integration-panel api-guide">
-          <h2>CertifyPro API guide</h2>
-          <p>Plan how your applications will communicate with CertifyPro.</p>
+          <h2>VistaraCertification API guide</h2>
+          <p>Plan how your applications will communicate with VistaraCertification.</p>
           <h3>Authentication</h3>
           <p>Production API requests will use a server-side API key in the Authorization header.</p>
           <pre>Authorization: Bearer YOUR_API_KEY</pre>

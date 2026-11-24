@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { CheckCircle2, Circle, ArrowRight, Sparkles, Award, Users, Mail, Plug, Palette } from "lucide-react";
 
 const initialTasks = [
@@ -30,7 +30,7 @@ export default function GettingStarted({ setPage }) {
       <div className="getting-hero">
         <div className="getting-hero-content">
           <div className="getting-badge"><Sparkles size={15}/> WORKSPACE ONBOARDING</div>
-          <h1>Welcome to CertifyPro!</h1>
+          <h1>Welcome to VistaraCertification!</h1>
           <p>Let's get your digital credential workspace ready. Follow these steps to get started.</p>
         </div>
         <div className="getting-hero-icon"><Award size={65}/></div>

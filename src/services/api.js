@@ -1,0 +1,130 @@
+export const API_BASE = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL.replace(/\/$/, "")}/api` : "/api";
+const TOKEN_KEY = "certifypro-token";
+
+export const authStorage = {
+  getToken: () => localStorage.getItem(TOKEN_KEY),
+  setToken: (token) => localStorage.setItem(TOKEN_KEY, token),
+  clearToken: () => localStorage.removeItem(TOKEN_KEY),
+};
+
+async function request(path, options = {}) {
+  const token = authStorage.getToken();
+  const isPublicRequest = path === "/auth/login" ||
+    path.startsWith("/issued-certificates/verify/");
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      ...(options.body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(token && !isPublicRequest ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const message = data.message || data.error || (
+      response.status === 401 && path === "/auth/login"
+        ? "Email or password is incorrect, or this account does not have administrator access."
+        : `Request failed (${response.status})`
+    );
+    const error = new Error(message);
+    error.status = response.status;
+    error.data = data;
+    throw error;
+  }
+
+  return data;
+}
+
+export const api = {
+  health: () => request("/health"),
+
+  login: async (credentials) => {
+    const data = await request("/auth/login", {
+      method: "POST",
+      body: JSON.stringify(credentials),
+    });
+
+    if (data.token) authStorage.setToken(data.token);
+    return data;
+  },
+
+  logout: () => authStorage.clearToken(),
+
+  me: () => request("/auth/me"),
+
+  getTemplates: () => request("/certificates"),
+
+  createTemplate: (template) =>
+    request("/certificates", {
+      method: "POST",
+      body: JSON.stringify(template),
+    }),
+
+  updateTemplate: (id, changes) =>
+    request(`/certificates/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(changes),
+    }),
+
+  deleteTemplate: (id) =>
+    request(`/certificates/${id}`, { method: "DELETE" }),
+
+  getRecipients: () => request("/recipients"),
+
+  createRecipient: (recipient) =>
+    request("/recipients", {
+      method: "POST",
+      body: JSON.stringify(recipient),
+    }),
+
+  bulkCreateRecipients: (recipients) =>
+    request("/recipients/bulk", {
+      method: "POST",
+      body: JSON.stringify({ recipients }),
+    }),
+
+  updateRecipient: (id, changes) =>
+    request(`/recipients/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(changes),
+    }),
+
+  deleteRecipient: (id) =>
+    request(`/recipients/${id}`, { method: "DELETE" }),
+
+  getIssuedCertificates: () => request("/issued-certificates"),
+
+  issueCertificate: (templateId, recipientId, options = {}) =>
+    request("/issued-certificates/issue", {
+      method: "POST",
+      body: JSON.stringify({ templateId, recipientId, ...options }),
+    }),
+
+  setCertificateExpiry: (certificateId, expiresAt) =>
+    request(`/issued-certificates/${encodeURIComponent(certificateId)}/expiry`, {
+      method: "PATCH",
+      body: JSON.stringify({ expiresAt }),
+    }),
+
+  resendCertificateEmail: (certificateId) =>
+    request(`/issued-certificates/${encodeURIComponent(certificateId)}/email`, {
+      method: "POST",
+    }),
+
+  getCertificateEmailStatuses: (certificateIds) =>
+    request("/issued-certificates/email-status", {
+      method: "POST",
+      body: JSON.stringify({ certificateIds }),
+    }),
+
+  verifyCertificate: (certificateId) =>
+    request(`/issued-certificates/verify/${encodeURIComponent(certificateId)}`),
+
+  revokeCertificate: (certificateId) =>
+    request(`/issued-certificates/${encodeURIComponent(certificateId)}/revoke`, {
+      method: "PATCH",
+    }),
+};

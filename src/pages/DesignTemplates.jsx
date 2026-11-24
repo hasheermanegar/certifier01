@@ -1,97 +1,142 @@
-import React, { useState } from "react";
-import { Search, Plus, Pencil, Trash2, FileText, LayoutTemplate } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Search, Plus, Pencil, Trash2, FileText, LayoutTemplate, Library, Upload, ExternalLink } from "lucide-react";
+import CertificateThumbnail from "../designer/CertificateThumbnail";
+import { createTemplateDesign, templateCatalog } from "../designer/TemplatesPanel";
+import TemplateLibraryDialog from "../designer/TemplateLibraryDialog";
+import { createImportedTemplates, normalizeCustomTemplate } from "../designer/customTemplates";
 
-function CertificateThumbnail({ design }) {
-  const width = design.width || (design.orientation === "portrait" ? 790 : 1120);
-  const height = design.height || (design.orientation === "portrait" ? 1120 : 790);
-  const elements = design.elements || [];
-
+function LibraryTemplateCard({ item, design, onUse }) {
   return (
-    <div className="cp-design-thumbnail">
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="xMidYMid meet"
-        role="img"
-        aria-label={`${design.name} certificate preview`}
+    <article className="cp-catalog-template-card">
+      <button
+        type="button"
+        className="cp-catalog-template-preview"
+        onClick={() => onUse(item)}
+        aria-label={`Customize ${item.name}`}
       >
-        <rect width={width} height={height} fill={design.background || "#ffffff"} />
-
-        {elements.map((e, index) => {
-          const x = Number(e.x) || 0;
-          const y = Number(e.y) || 0;
-          const w = Number(e.width) || 100;
-          const h = Number(e.height) || 40;
-
-          if (e.type === "image" && e.src) {
-            return (
-              <image
-                key={e.id || index}
-                href={e.src}
-                x={x} y={y} width={w} height={h}
-                preserveAspectRatio="xMidYMid meet"
-              />
-            );
-          }
-
-          if (e.type === "shape") {
-            return (
-              <rect
-                key={e.id || index}
-                x={x} y={y} width={w} height={h}
-                fill={e.fill || "transparent"}
-                stroke={e.stroke || "none"}
-                strokeWidth={e.strokeWidth || 0}
-                opacity={e.opacity ?? 1}
-                rx={e.shape === "rounded" ? 14 : e.shape === "circle" ? Math.min(w,h)/2 : 0}
-              />
-            );
-          }
-
-          if (e.type === "qr") {
-            return (
-              <g key={e.id || index}>
-                <rect x={x} y={y} width={w} height={h} fill="#fff" stroke="#333" strokeWidth="3"/>
-                <path d={`M ${x+w*.12} ${y+h*.12} h ${w*.25} v ${h*.25} h -${w*.25} z M ${x+w*.63} ${y+h*.12} h ${w*.25} v ${h*.25} h -${w*.25} z M ${x+w*.12} ${y+h*.63} h ${w*.25} v ${h*.25} h -${w*.25} z`} fill="#222"/>
-                <path d={`M ${x+w*.5} ${y+h*.5} h ${w*.12} v ${h*.12} h -${w*.12} z M ${x+w*.7} ${y+h*.55} h ${w*.15} v ${h*.15} h -${w*.15} z`} fill="#222"/>
-              </g>
-            );
-          }
-
-          if (!e.text) return null;
-
-          const fontSize = Number(e.fontSize) || 20;
-          const anchor = e.align === "left" ? "start" : e.align === "right" ? "end" : "middle";
-          const textX = e.align === "left" ? x : e.align === "right" ? x + w : x + w / 2;
-
-          return (
-            <text
-              key={e.id || index}
-              x={textX}
-              y={y + Math.min(h * .72, fontSize * 1.2)}
-              textAnchor={anchor}
-              fill={e.color || "#26334d"}
-              fontSize={fontSize}
-              fontFamily={e.fontFamily || "Inter, sans-serif"}
-              fontWeight={e.bold ? 700 : 400}
-              fontStyle={e.italic ? "italic" : "normal"}
-              textDecoration={e.underline ? "underline" : "none"}
-              opacity={e.opacity ?? 1}
-            >
-              {e.text}
-            </text>
-          );
-        })}
-      </svg>
-    </div>
+        <CertificateThumbnail design={design} />
+        <span><Pencil size={14} /> Customize</span>
+      </button>
+      <div className="cp-catalog-template-details">
+        <div>
+          <strong title={item.name}>{item.name}</strong>
+          <span>{item.category} · Editable design</span>
+        </div>
+        <button type="button" onClick={() => onUse(item)}>Use</button>
+      </div>
+    </article>
   );
 }
 
-export default function DesignTemplates({ designs = [], onCreate, onOpen, onDelete }) {
+export default function DesignTemplates({ designs = [], onCreate, onOpen, onDelete, onUseTemplate }) {
   const [search, setSearch] = useState("");
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [category, setCategory] = useState("All");
+  const [orientation, setOrientation] = useState("landscape");
+  const [visibleCount, setVisibleCount] = useState(24);
+  const importInput = useRef(null);
+  const [importing, setImporting] = useState(false);
+  const [importMessage, setImportMessage] = useState(null);
+  const [canvaUrl, setCanvaUrl] = useState("");
+  const [customTemplates, setCustomTemplates] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("cp-custom-templates") || "[]");
+      return Array.isArray(saved)
+        ? saved.filter(template => template && typeof template === "object").map(normalizeCustomTemplate)
+        : [];
+    } catch (error) {
+      console.error("Could not read custom templates:", error);
+      return [];
+    }
+  });
 
   const list = designs.filter(d =>
     (d.name || "").toLowerCase().includes(search.toLowerCase())
   );
+  const customList = customTemplates.filter(template =>
+    (template.name || "").toLowerCase().includes(search.toLowerCase())
+  );
+  const categories = useMemo(
+    () => ["All", ...new Set(templateCatalog.map(template => template.category).filter(Boolean))],
+    []
+  );
+  const filteredCatalog = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return templateCatalog.filter(template =>
+      (category === "All" || template.category === category) &&
+      (!query || `${template.name} ${template.category}`.toLowerCase().includes(query))
+    );
+  }, [category, search]);
+  const visibleCatalog = useMemo(
+    () => filteredCatalog.slice(0, visibleCount).map(item => ({
+      item,
+      design: createTemplateDesign(item, orientation)
+    })),
+    [filteredCatalog, visibleCount, orientation]
+  );
+
+  const chooseTemplate = (template, orientation) => {
+    onUseTemplate?.(template.custom ? template : createTemplateDesign(template, orientation));
+  };
+
+  const saveCustomTemplates = importedTemplates => {
+    const next = [...importedTemplates, ...customTemplates];
+    try {
+      localStorage.setItem("cp-custom-templates", JSON.stringify(next));
+    } catch (error) {
+      console.error("Could not save imported templates:", error);
+      throw new Error("Browser storage is full. Remove an old custom template and try again.", { cause: error });
+    }
+    setCustomTemplates(next);
+  };
+
+  const deleteCustomTemplate = template => {
+    if (!window.confirm(`Delete custom template "${template.name}"?`)) return;
+    const next = customTemplates.filter(item => item.id !== template.id);
+    try {
+      localStorage.setItem("cp-custom-templates", JSON.stringify(next));
+      setCustomTemplates(next);
+    } catch (error) {
+      console.error("Could not delete custom template:", error);
+      window.alert("Could not update your custom template library.");
+    }
+  };
+
+  const importCanvaExport = async event => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setImporting(true);
+    setImportMessage(null);
+    try {
+      const importedTemplates = await createImportedTemplates(file, { canvaUrl });
+      saveCustomTemplates(importedTemplates);
+      setCanvaUrl("");
+      const isPptx = importedTemplates[0]?.sourceFormat === "PPTX";
+      const warningCount = importedTemplates.reduce((total, template) =>
+        total + (template.importWarnings?.unsupported || 0) +
+        (template.importWarnings?.approximated || 0) +
+        (template.importWarnings?.simplifiedText || 0), 0);
+      const isPdf = importedTemplates[0]?.sourceFormat === "PDF";
+      setImportMessage({
+        type: "success",
+        text: isPptx
+          ? `${importedTemplates.length} slide${importedTemplates.length === 1 ? "" : "s"} added as editable layers.${warningCount ? " Some complex shapes or mixed text styles may look different." : ""}${importedTemplates[0]?.canvaUrl ? " Open the original in Canva from its template card." : ""}`
+          : isPdf && importedTemplates.length > 1
+            ? `${importedTemplates.length} PDF pages were added to My custom templates as separate designs. PDF artwork stays flat; use PPTX for editable text, shapes and images.`
+            : `${importedTemplates[0].name} was added to My custom templates. This export is a flat image; use PPTX for editable text, shapes and images.`
+      });
+    } catch (error) {
+      console.error("Could not import design file:", error);
+      setImportMessage({
+        type: "error",
+        text: error.message || "Could not import this design. Try a PPTX, PDF, PNG, JPG or WebP export."
+      });
+    } finally {
+      setImporting(false);
+    }
+  };
 
   return (
     <div className="page-content cp-design-library">
@@ -101,30 +146,132 @@ export default function DesignTemplates({ designs = [], onCreate, onOpen, onDele
           <h1>Design templates</h1>
           <p>Create and manage reusable certificate designs.</p>
         </div>
-        <button className="cp-design-create" onClick={onCreate}>
-          <Plus size={16}/> Create design
-        </button>
+        <div className="cp-design-heading-actions">
+          <button className="cp-design-browse" onClick={() => setLibraryOpen(true)}>
+            <Library size={15}/> Browse templates
+          </button>
+          <button className="cp-design-create" onClick={onCreate}>
+            <Plus size={16}/> Create design
+          </button>
+        </div>
       </div>
+
+      <section className="cp-canva-import-card" aria-label="Import a design">
+        <div className="cp-canva-import-copy">
+          <span>DESIGN IMPORT</span>
+          <h2>Bring a design into your library</h2>
+          <p>Upload a file or import a Canva design link.</p>
+        </div>
+        <div className="cp-canva-import-controls">
+          <label className="cp-design-canva-url">
+            <span>Canva design link <small>(optional)</small></span>
+            <input
+              type="url"
+              value={canvaUrl}
+              onChange={event => setCanvaUrl(event.target.value)}
+              placeholder="https://www.canva.com/design/…"
+              aria-label="Canva design link"
+            />
+          </label>
+          <button type="button" className="cp-design-create" onClick={() => importInput.current?.click()} disabled={importing}>
+            <Upload size={15} /> {importing ? "Importing…" : "Upload template file"}
+          </button>
+          <input
+            ref={importInput}
+            type="file"
+            accept=".pptx,.pdf,.png,.jpg,.jpeg,.webp,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/pdf,image/png,image/jpeg,image/webp"
+            hidden
+            onChange={event => { void importCanvaExport(event); }}
+          />
+        </div>
+      </section>
+      <p className="cp-design-import-help">PowerPoint files can be imported as editable layers. Each page of a PDF is saved as a separate flat-artwork template.</p>
+      {importMessage && (
+        <p className={`cp-design-import-status ${importMessage.type}`} role={importMessage.type === "error" ? "alert" : "status"}>
+          {importMessage.text}
+        </p>
+      )}
+
+      <div className="cp-design-toolbar">
+        <div className="cp-design-search">
+          <Search size={17}/>
+          <input
+            placeholder="Search the template library, saved designs, and custom uploads..."
+            value={search}
+            onChange={e => { setSearch(e.target.value); setVisibleCount(24); }}
+          />
+          {search && <button onClick={() => setSearch("")} aria-label="Clear search">×</button>}
+        </div>
+      </div>
+
+      <section className="cp-design-library-section cp-template-catalog-section">
+        <div className="cp-design-library-title">
+          <div>
+            <h2>Template library</h2>
+            <p>Choose a starting point and customize every text, shape, color, and image layer.</p>
+          </div>
+          <span className="cp-design-count">{filteredCatalog.length.toLocaleString()} templates</span>
+        </div>
+
+        <div className="cp-catalog-controls">
+          <div className="cp-catalog-categories" aria-label="Filter templates by category">
+            {categories.map(value => (
+              <button
+                type="button"
+                key={value}
+                className={category === value ? "active" : ""}
+                onClick={() => { setCategory(value); setVisibleCount(24); }}
+              >
+                {value}
+              </button>
+            ))}
+          </div>
+          <div className="cp-catalog-orientation" aria-label="Template orientation">
+            {["landscape", "portrait"].map(value => (
+              <button
+                type="button"
+                key={value}
+                className={orientation === value ? "active" : ""}
+                onClick={() => setOrientation(value)}
+              >
+                {value === "landscape" ? "Landscape" : "Portrait"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {visibleCatalog.length ? (
+          <div className="cp-catalog-template-grid">
+            {visibleCatalog.map(({ item, design }) => (
+              <LibraryTemplateCard
+                key={item.id}
+                item={item}
+                design={design}
+                onUse={template => chooseTemplate(template, orientation)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="cp-design-custom-empty">No templates match this search. Try another keyword or category.</div>
+        )}
+
+        {filteredCatalog.length > visibleCatalog.length && (
+          <div className="cp-catalog-load-more">
+            <span>Showing {visibleCatalog.length.toLocaleString()} of {filteredCatalog.length.toLocaleString()}</span>
+            <button type="button" onClick={() => setVisibleCount(count => count + 24)}>
+              Load {Math.min(24, filteredCatalog.length - visibleCatalog.length)} more templates
+            </button>
+          </div>
+        )}
+      </section>
 
       <section className="cp-design-library-section">
         <div className="cp-design-library-title">
           <div>
-            <h2>Your templates</h2>
+            <h2>Saved designs</h2>
             <p>Manage your saved certificate designs.</p>
           </div>
           <span className="cp-design-count">{list.length} {list.length === 1 ? "design" : "designs"}</span>
-        </div>
-
-        <div className="cp-design-toolbar">
-          <div className="cp-design-search">
-            <Search size={17}/>
-            <input
-              placeholder="Search designs by name..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-            {search && <button onClick={() => setSearch("")} aria-label="Clear search">×</button>}
-          </div>
         </div>
 
         {list.length ? (
@@ -180,6 +327,75 @@ export default function DesignTemplates({ designs = [], onCreate, onOpen, onDele
           </div>
         )}
       </section>
+
+      <section className="cp-design-library-section cp-custom-library-section">
+        <div className="cp-design-library-title">
+          <div>
+            <h2>My custom templates</h2>
+            <p>Your imported designs and templates saved from the editor.</p>
+          </div>
+          <div className="cp-design-custom-import-actions">
+            <span className="cp-design-count">{customList.length} {customList.length === 1 ? "template" : "templates"}</span>
+          </div>
+        </div>
+
+        {customList.length ? (
+          <div className="cp-design-grid">
+            {customList.map(template => (
+              <article className="cp-design-card" key={template.id}>
+                <button
+                  className="cp-design-preview-button"
+                  onClick={() => onOpen(template)}
+                  aria-label={`Use ${template.name}`}
+                >
+                  <CertificateThumbnail design={template} />
+                  <span className="cp-design-preview-overlay">
+                    <Pencil size={15}/> Use template
+                  </span>
+                </button>
+                <div className="cp-design-card-details">
+                  <div className="cp-design-card-title">
+                    <div className="cp-design-file-icon"><FileText size={17}/></div>
+                    <div>
+                      <h3>{template.name || "Untitled custom template"}</h3>
+                      <p>{template.orientation || "Landscape"} · {(template.elements || []).length} editable elements</p>
+                    </div>
+                  </div>
+                  <div className="cp-design-card-actions">
+                    <button className="cp-design-edit" onClick={() => onOpen(template)}>
+                      <Pencil size={13}/> Use template
+                    </button>
+                    {template.canvaUrl && (
+                      <a className="cp-design-edit cp-design-canva-link" href={template.canvaUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink size={13}/> Open in Canva
+                      </a>
+                    )}
+                    <button className="cp-design-delete" onClick={() => deleteCustomTemplate(template)}>
+                      <Trash2 size={13}/> Delete
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="cp-design-custom-empty">
+            <LayoutTemplate size={20}/>
+            <span>{search ? "No custom templates match your search." : "Upload a design or save one from the editor to build your reusable library."}</span>
+          </div>
+        )}
+      </section>
+
+      <TemplateLibraryDialog
+        open={libraryOpen}
+        templates={templateCatalog}
+        customTemplates={customTemplates}
+        buildDesign={createTemplateDesign}
+        onClose={() => setLibraryOpen(false)}
+        onSelect={chooseTemplate}
+        onImportFile={() => importInput.current?.click()}
+        onDeleteCustom={deleteCustomTemplate}
+      />
     </div>
   );
 }

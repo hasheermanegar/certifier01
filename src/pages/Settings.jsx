@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
 
 const defaults = {
   organization: "My Organization",
   email: "",
   website: "",
   description: "",
-  brandColor: "#315eea",
+  brandColor: "#1A4D2E",
   certificatePrefix: "CP",
   defaultValidity: "No expiry",
   timezone: "Asia/Kolkata",
@@ -14,18 +14,59 @@ const defaults = {
   securityNotifications: true
 };
 
-export default function Settings() {
-  const [settings, setSettings] = useState(defaults);
-  const [saved, setSaved] = useState(false);
+function Field({ label, name, placeholder, type = "text", settings, update, fieldStyle, labelStyle }) {
+  return (
+    <div>
+      <label style={labelStyle} htmlFor={name}>{label}</label>
+      <input
+        id={name}
+        type={type}
+        value={settings[name]}
+        placeholder={placeholder || ""}
+        onChange={e => update(name, e.target.value)}
+        style={fieldStyle}
+      />
+    </div>
+  );
+}
 
-  useEffect(() => {
+function Toggle({ label, description, name, settings, update }) {
+  return (
+    <div style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 15,
+      padding: "15px 0",
+      borderBottom: "1px solid #edf0f5"
+    }}>
+      <div>
+        <strong style={{ fontSize: 14 }}>{label}</strong>
+        <p style={{ margin: "5px 0 0", fontSize: 12, color: "#8290a7" }}>{description}</p>
+      </div>
+      <input
+        type="checkbox"
+        checked={settings[name]}
+        onChange={e => update(name, e.target.checked)}
+        style={{ width: 19, height: 19, accentColor: "#1A4D2E" }}
+      />
+    </div>
+  );
+}
+
+export default function Settings() {
+  const [settings, setSettings] = useState(() => {
     try {
-      const stored = JSON.parse(localStorage.getItem("cp-settings") || "{}");
-      setSettings({ ...defaults, ...stored });
+      return {
+        ...defaults,
+        ...JSON.parse(localStorage.getItem("cp-settings") || "{}"),
+        brandColor: "#1A4D2E"
+      };
     } catch {
-      setSettings(defaults);
+      return defaults;
     }
-  }, []);
+  });
+  const [saved, setSaved] = useState(false);
 
   function update(key, value) {
     setSettings(previous => ({ ...previous, [key]: value }));
@@ -68,41 +109,6 @@ export default function Settings() {
     marginTop: 20
   };
 
-  const Field = ({ label, name, placeholder, type = "text" }) => (
-    <div>
-      <label style={labelStyle} htmlFor={name}>{label}</label>
-      <input
-        id={name}
-        type={type}
-        value={settings[name]}
-        placeholder={placeholder || ""}
-        onChange={e => update(name, e.target.value)}
-        style={fieldStyle}
-      />
-    </div>
-  );
-
-  const Toggle = ({ label, description, name }) => (
-    <div style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      gap: 15,
-      padding: "15px 0",
-      borderBottom: "1px solid #edf0f5"
-    }}>
-      <div>
-        <strong style={{ fontSize: 14 }}>{label}</strong>
-        <p style={{ margin: "5px 0 0", fontSize: 12, color: "#8290a7" }}>{description}</p>
-      </div>
-      <input
-        type="checkbox"
-        checked={settings[name]}
-        onChange={e => update(name, e.target.checked)}
-        style={{ width: 19, height: 19, accentColor: "#315eea" }}
-      />
-    </div>
-  );
 
   return (
     <div className="page-content">
@@ -119,10 +125,10 @@ export default function Settings() {
           <h2 style={{ fontSize: 18, marginTop: 0 }}>Organization profile</h2>
           <p style={{ color: "#8290a7", fontSize: 13 }}>Manage your organization's basic information.</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 20, marginTop: 22 }}>
-            <Field label="Organization name" name="organization" placeholder="Your organization name" />
-            <Field label="Contact email" name="email" placeholder="admin@example.com" type="email" />
-            <Field label="Website" name="website" placeholder="https://example.com" />
-            <Field label="Timezone" name="timezone" placeholder="Asia/Kolkata" />
+            <Field label="Organization name" name="organization" placeholder="Your organization name" settings={settings} update={update} fieldStyle={fieldStyle} labelStyle={labelStyle} />
+            <Field label="Contact email" name="email" placeholder="admin@example.com" type="email" settings={settings} update={update} fieldStyle={fieldStyle} labelStyle={labelStyle} />
+            <Field label="Website" name="website" placeholder="https://example.com" settings={settings} update={update} fieldStyle={fieldStyle} labelStyle={labelStyle} />
+            <Field label="Timezone" name="timezone" placeholder="Asia/Kolkata" settings={settings} update={update} fieldStyle={fieldStyle} labelStyle={labelStyle} />
           </div>
           <div style={{ marginTop: 20 }}>
             <label style={labelStyle} htmlFor="description">Organization description</label>
@@ -150,9 +156,9 @@ export default function Settings() {
             />
             <div>
               <strong style={{ fontSize: 14 }}>Primary brand colour</strong>
-              <p style={{ color: "#8290a7", fontSize: 12, margin: "5px 0" }}>{settings.brandColor}</p>
+              <p style={{ color: "#4C9A66", fontSize: 12, margin: "5px 0" }}>{settings.brandColor}</p>
             </div>
-            <div style={{ background: settings.brandColor, color: "white", padding: "10px 18px", borderRadius: 8, fontSize: 13, marginLeft: "auto" }}>
+            <div style={{ background: "#1A4D2E", color: "white", padding: "10px 18px", borderRadius: 6, fontSize: 13, marginLeft: "auto", boxShadow: "none" }}>
               Brand preview
             </div>
           </div>
@@ -185,9 +191,9 @@ export default function Settings() {
         <div className="table-wrap" style={sectionStyle}>
           <h2 style={{ fontSize: 18, marginTop: 0 }}>Notifications</h2>
           <p style={{ color: "#8290a7", fontSize: 13 }}>Choose which workspace notifications you want to receive.</p>
-          <Toggle name="emailNotifications" label="Email notifications" description="General workspace email notifications." />
-          <Toggle name="issuanceNotifications" label="Certificate issuance" description="Notifications when certificates are issued." />
-          <Toggle name="securityNotifications" label="Security notifications" description="Important account and security alerts." />
+          <Toggle name="emailNotifications" label="Email notifications" description="General workspace email notifications." settings={settings} update={update} />
+          <Toggle name="issuanceNotifications" label="Certificate issuance" description="Notifications when certificates are issued." settings={settings} update={update} />
+          <Toggle name="securityNotifications" label="Security notifications" description="Important account and security alerts." settings={settings} update={update} />
         </div>
 
         <div className="table-wrap" style={sectionStyle}>
@@ -209,7 +215,7 @@ export default function Settings() {
           <button
             type="submit"
             style={{
-              background: "#315eea",
+              background: "#1A4D2E",
               color: "#ffffff",
               border: "none",
               borderRadius: 9,

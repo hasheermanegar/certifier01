@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 export default function Forms({ forms = [], onSave, onDelete }) {
   const [editing, setEditing] = useState(null);
@@ -20,7 +20,9 @@ export default function Forms({ forms = [], onSave, onDelete }) {
         { id: crypto.randomUUID(), label: "Email Address", type: "email", required: true }
       ],
       submissions: []
-    });
+
+      
+   });
     setMode("editor");
   };
 

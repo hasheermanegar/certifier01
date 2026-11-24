@@ -1,0 +1,69 @@
+.vistara-loading {
+  min-height: 100dvh;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  background: #F8FCF9;
+}
+
+.vistara-loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 32px;
+  text-align: center;
+}
+
+.vistara-loading-content img {
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+}
+
+.vistara-loading-content h1 {
+  font-family: "Merriweather", Georgia, serif;
+  font-size: clamp(22px, 4vw, 30px);
+  color: #1A4D2E;
+  margin: 0;
+  font-weight: 700;
+}
+
+.vistara-loading-content p {
+  color: #62786A;
+  font-size: 13px;
+  margin: 0;
+}
+
+.vistara-loading-track {
+  width: 180px;
+  height: 4px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #DCECE1;
+}
+
+.vistara-loading-track span {
+  display: block;
+  width: 40%;
+  height: 100%;
+  background: #1A4D2E;
+  border-radius: 8px;
+  animation: vistara-loading-motion 1.4s ease-in-out infinite;
+}
+
+@keyframes vistara-loading-motion {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(350%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vistara-loading-track span {
+    animation: none;
+    width: 100%;
+  }
+}
+
+.main-area .vistara-loading {
+  min-height: 70vh;
+}

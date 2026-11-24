@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { QrCode, ShieldCheck, Link2, Plus, Info } from "lucide-react";
 
 export default function QRCodesPanel({ onAdd }) {
@@ -48,7 +48,7 @@ export default function QRCodesPanel({ onAdd }) {
             <strong>Automatic verification QR</strong>
           </div>
           <p>
-            CertifyPro will generate a unique verification link for each
+            VistaraCertification will generate a unique verification link for each
             certificate when you issue credentials individually or in bulk.
           </p>
           <div className="cp-qr-token">

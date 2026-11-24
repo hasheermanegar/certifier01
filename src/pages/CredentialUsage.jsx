@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 
 export default function CredentialUsage({ credentials = [], designs = [] }) {
   const stats = useMemo(() => {
@@ -8,6 +8,7 @@ export default function CredentialUsage({ credentials = [], designs = [] }) {
     const templates = designs.map(d => {
       const items = credentials.filter(c => c.templateId === d.id);
       return {
+        id: d.id,
         name: d.name,
         total: items.length,
         issued: items.filter(c => String(c.status || "").toLowerCase() === "issued").length
@@ -48,13 +49,13 @@ export default function CredentialUsage({ credentials = [], designs = [] }) {
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const link = document.createElement("a");
     link.href = url;
-    link.download = "certifypro-credential-usage.csv";
+    link.download = "vistaracertifications-credential-usage.csv";
     link.click();
     URL.revokeObjectURL(url);
   }
 
   return (
-    <div className="page-content">
+    <div className="page-content cp-credential-usage-page">
       <div className="page-heading">
         <div>
           <small className="eyebrow">CREDENTIAL MANAGEMENT</small>
@@ -64,7 +65,7 @@ export default function CredentialUsage({ credentials = [], designs = [] }) {
         <button
           onClick={exportCSV}
           style={{
-            background: "#315eea",
+            background: "#1A4D2E",
             color: "#ffffff",
             border: "none",
             borderRadius: 9,
@@ -72,7 +73,7 @@ export default function CredentialUsage({ credentials = [], designs = [] }) {
             fontSize: 14,
             fontWeight: 600,
             cursor: "pointer",
-            boxShadow: "0 3px 8px rgba(49,94,234,0.2)",
+            boxShadow: "none",
             transition: "all 0.2s ease"
           }}
         >
@@ -102,7 +103,7 @@ export default function CredentialUsage({ credentials = [], designs = [] }) {
           {stats.months.map(m => (
             <div key={m.key} style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "end", height: "100%", gap: 8 }}>
               <b style={{ fontSize: 12 }}>{m.count}</b>
-              <div style={{ width: "65%", minWidth: 18, height: `${Math.max(5, m.count / max * 135)}px`, background: "#315eea", borderRadius: "6px 6px 0 0" }} />
+              <div style={{ width: "65%", minWidth: 18, height: `${Math.max(5, m.count / max * 135)}px`, background: "#1A4D2E", borderRadius: "6px 6px 0 0" }} />
               <small style={{ color: "#8290a7" }}>{m.label}</small>
             </div>
           ))}
@@ -123,13 +124,13 @@ export default function CredentialUsage({ credentials = [], designs = [] }) {
               </tr></thead>
               <tbody>
                 {stats.templates.map(t => (
-                  <tr key={t.name}>
+                  <tr key={t.id}>
                     <td style={{ padding: 12 }}>{t.name}</td>
                     <td style={{ padding: 12 }}>{t.total}</td>
                     <td style={{ padding: 12 }}>{t.issued}</td>
                     <td style={{ padding: 12, minWidth: 130 }}>
                       <div style={{ background: "#e9edf5", height: 7, borderRadius: 10 }}>
-                        <div style={{ width: `${credentials.length ? t.total / credentials.length * 100 : 0}%`, background: "#315eea", height: 7, borderRadius: 10 }} />
+                        <div style={{ width: `${credentials.length ? t.total / credentials.length * 100 : 0}%`, background: "#1A4D2E", height: 7, borderRadius: 10 }} />
                       </div>
                     </td>
                   </tr>

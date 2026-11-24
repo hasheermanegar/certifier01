@@ -1,0 +1,122 @@
+import { useState } from "react";
+
+const shapes = [
+  { name: "Rectangle", icon: "▭", shape: "rectangle" },
+  { name: "Rounded rectangle", icon: "▢", shape: "rounded" },
+  { name: "Circle", icon: "●", shape: "circle" },
+  { name: "Triangle", icon: "▲", shape: "triangle" },
+  { name: "Star", icon: "★", shape: "star" },
+  { name: "Diamond", icon: "◆", shape: "diamond" },
+];
+
+const lines = [
+  { name: "Horizontal line", icon: "―", shape: "hline" },
+  { name: "Vertical line", icon: "│", shape: "vline" },
+  { name: "Dashed line", icon: "┄", shape: "dashed" },
+];
+
+const decorations = [
+  { name: "Certificate border", description: "Decorative double-line frame", icon: "▣", shape: "border" },
+  { name: "Corner ornament", description: "Elegant corner decoration", icon: "❖", shape: "corner" },
+];
+
+export default function ElementsPanel({ onAdd }) {
+  const [search, setSearch] = useState("");
+  const query = search.trim().toLowerCase();
+  const matches = item => `${item.name} ${item.shape || ""} ${item.description || ""}`.toLowerCase().includes(query);
+  const visibleShapes = shapes.filter(matches);
+  const visibleLines = lines.filter(matches);
+  const visibleDecorations = decorations.filter(matches);
+  const showUpload = !query || ["custom", "graphics", "upload", "svg"].some(word => word.includes(query) || query.includes(word));
+  const hasResults = visibleShapes.length || visibleLines.length || visibleDecorations.length || showUpload;
+
+  const addShape = shape => {
+    const line = ["hline", "vline", "dashed"].includes(shape);
+    const decoration = ["border", "corner"].includes(shape);
+    onAdd("shape", "", {
+      shape,
+      fill: line || decoration ? "transparent" : "#315eea",
+      stroke: line || decoration ? "#315eea" : "transparent",
+      strokeWidth: line ? 3 : decoration ? 4 : 0,
+      opacity: 1,
+      width: shape === "vline" ? 8 : line ? 300 : decoration ? 500 : 150,
+      height: shape === "vline" ? 150 : line ? 8 : decoration ? 350 : 110
+    });
+  };
+
+  const uploadSVG = async file => {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert("SVG must be smaller than 2 MB.");
+      return;
+    }
+    const source = await file.text();
+    if (!/<svg[\s>]/i.test(source) || /<script|foreignObject|javascript:/i.test(source)) {
+      alert("Please select a valid, safe SVG file.");
+      return;
+    }
+    const cleaned = source.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
+    const src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(cleaned)));
+    onAdd("image", "SVG graphic", { src, width: 180, height: 140 });
+  };
+
+  return (
+    <div className="designer-panel cp-elements-panel">
+      <div className="cp-elements-heading">
+        <h3>Elements</h3>
+        <p>Add shapes and decorative graphics to your certificate.</p>
+      </div>
+
+      <div className="cp-elements-search">
+        <span>⌕</span>
+        <input aria-label="Search elements" placeholder="Search elements" value={search} onChange={e => setSearch(e.target.value)} />
+        {search && <button type="button" aria-label="Clear search" onClick={() => setSearch("")}>×</button>}
+      </div>
+
+      {visibleShapes.length > 0 && <section className="cp-elements-section">
+        <h4>Basic shapes <span>{visibleShapes.length}</span></h4>
+        <div className="cp-elements-grid">
+          {visibleShapes.map(item => (
+            <button type="button" key={item.shape} onClick={() => addShape(item.shape)}>
+              <b>{item.icon}</b><small>{item.name}</small>
+            </button>
+          ))}
+        </div>
+      </section>}
+
+      {visibleLines.length > 0 && <section className="cp-elements-section">
+        <h4>Lines and dividers</h4>
+        <div className="cp-elements-grid cp-line-grid">
+          {visibleLines.map(item => (
+            <button type="button" key={item.shape} onClick={() => addShape(item.shape)}>
+              <b>{item.icon}</b><small>{item.name}</small>
+            </button>
+          ))}
+        </div>
+      </section>}
+
+      {visibleDecorations.length > 0 && <section className="cp-elements-section">
+        <h4>Certificate decorations</h4>
+        <div className="cp-decoration-list">
+          {visibleDecorations.map(item => (
+            <button type="button" key={item.shape} onClick={() => addShape(item.shape)}>
+              <b>{item.icon}</b><span><strong>{item.name}</strong><small>{item.description}</small></span>
+            </button>
+          ))}
+        </div>
+      </section>}
+
+      {showUpload && <section className="cp-elements-section">
+        <h4>Custom graphics</h4>
+        <label className="cp-svg-upload">
+          <span>＋</span>
+          <strong>Upload SVG graphic</strong>
+          <small>Choose an SVG file · Maximum 2 MB</small>
+          <input type="file" accept=".svg,image/svg+xml" onChange={e => { uploadSVG(e.target.files?.[0]); e.target.value = ""; }} />
+        </label>
+      </section>}
+
+      {!hasResults && <div className="cp-elements-empty">No elements match “{search}”. Try another search.</div>}
+    </div>
+  );
+}

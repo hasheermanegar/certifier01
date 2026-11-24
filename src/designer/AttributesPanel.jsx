@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   UserRound, Mail, Award, CalendarDays,
   CalendarClock, Hash, Building2, Plus,
@@ -10,31 +10,31 @@ const groups = [
     title: "Recipient information",
     description: "Details about the person receiving the certificate",
     fields: [
-      { name: "Recipient Name", variable: "{{recipient_name}}", icon: UserRound, color: "#315eea", bg: "#edf2ff" },
-      { name: "Recipient Email", variable: "{{recipient_email}}", icon: Mail, color: "#16865b", bg: "#e9f8f0" }
+      { name: "Recipient Name", variable: "{{recipient_name}}", icon: UserRound, color: "#1A4D2E", bg: "#E7F3EB" },
+      { name: "Recipient Email", variable: "{{recipient_email}}", icon: Mail, color: "#2F7D57", bg: "#E7F3EB" }
     ]
   },
   {
     title: "Credential information",
     description: "Information about the issued credential",
     fields: [
-      { name: "Credential Title", variable: "{{credential_title}}", icon: Award, color: "#8754c7", bg: "#f3edff" },
-      { name: "Credential ID", variable: "{{credential_id}}", icon: Hash, color: "#c17a24", bg: "#fff5e8" }
+      { name: "Credential Title", variable: "{{credential_title}}", icon: Award, color: "#1A4D2E", bg: "#E7F3EB" },
+      { name: "Credential ID", variable: "{{credential_id}}", icon: Hash, color: "#2F7D57", bg: "#F8FCF9" }
     ]
   },
   {
     title: "Date information",
     description: "Important certificate dates",
     fields: [
-      { name: "Issue Date", variable: "{{issue_date}}", icon: CalendarDays, color: "#1689a5", bg: "#e9f8fc" },
-      { name: "Expiry Date", variable: "{{expiry_date}}", icon: CalendarClock, color: "#c05b68", bg: "#fff0f1" }
+      { name: "Issue Date", variable: "{{issue_date}}", icon: CalendarDays, color: "#4C9A66", bg: "#E7F3EB" },
+      { name: "Expiry Date", variable: "{{expiry_date}}", icon: CalendarClock, color: "#1A4D2E", bg: "#F8FCF9" }
     ]
   },
   {
     title: "Issuer information",
     description: "Details about the issuing organisation",
     fields: [
-      { name: "Issuer Name", variable: "{{issuer_name}}", icon: Building2, color: "#64748b", bg: "#eef1f5" }
+      { name: "Issuer Name", variable: "{{issuer_name}}", icon: Building2, color: "#1A4D2E", bg: "#E7F3EB" }
     ]
   }
 ];

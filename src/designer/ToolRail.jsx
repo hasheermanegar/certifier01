@@ -1,4 +1,3 @@
-import React from "react";
 import {
   LayoutTemplate, ImagePlus, Shapes, Type,
   Braces, QrCode, Layers

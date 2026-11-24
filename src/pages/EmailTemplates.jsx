@@ -1,21 +1,8 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 const uid = () => crypto.randomUUID();
 
-const defaults = [
-  {
-    id: "default-1",
-    name: "Certificate delivery",
-    subject: "Congratulations {{recipient_name}}! Your certificate is ready",
-    body: "Hello {{recipient_name}},\n\nCongratulations! You have successfully received your {{credential_title}}.\n\nYour certificate was issued on {{issue_date}}.\n\nThank you,\nThe CertifyPro Team"
-  },
-  {
-    id: "default-2",
-    name: "Certificate reminder",
-    subject: "Your certificate is waiting",
-    body: "Hello {{recipient_name}},\n\nYour {{credential_title}} is ready. Please visit your certificate link to view it.\n\nRegards,\nThe CertifyPro Team"
-  }
-];
+
 
 const variables = [
   "{{recipient_name}}",
@@ -59,7 +46,7 @@ export default function EmailTemplates({ templates = [], onSave, onDelete }) {
       .replaceAll("{{credential_title}}", "Certificate of Achievement")
       .replaceAll("{{issue_date}}", new Date().toLocaleDateString())
       .replaceAll("{{recipient_email}}", "alex@example.com")
-      .replaceAll("{{certificate_link}}", "https://certifypro.example/verify");
+      .replaceAll("{{certificate_link}}", "https://example.com/verify");
 
   return (
     <div className="page-content cp-email-page">
@@ -192,6 +179,10 @@ export default function EmailTemplates({ templates = [], onSave, onDelete }) {
               <button className="icon-btn" onClick={() => setPreview(null)}>×</button>
             </div>
             <div className="preview-email">
+              <div className="vistara-email-brand">
+                <img src="/vistara-flower.png" alt="" />
+                <span>VistaraCertification</span>
+              </div>
               <small>SUBJECT</small>
               <h3>{renderPreview(preview.subject)}</h3>
               <hr />

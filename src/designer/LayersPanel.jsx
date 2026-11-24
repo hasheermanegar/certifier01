@@ -1,28 +1,42 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Type, QrCode, Image, Shapes, Braces,
   Eye, EyeOff, ChevronUp, ChevronDown,
-  Trash2, Layers, Search
+  Trash2, Layers, Search, Lock, Unlock, PenTool, GripVertical
 } from "lucide-react";
 
 function getLayerInfo(element) {
   const types = {
-    text: { label: "Text", icon: Type, color: "#315eea", bg: "#edf2ff" },
-    attribute: { label: "Dynamic field", icon: Braces, color: "#8754c7", bg: "#f3edff" },
-    qr: { label: "QR code", icon: QrCode, color: "#16865b", bg: "#e9f8f0" },
-    image: { label: "Image", icon: Image, color: "#c17a24", bg: "#fff5e8" },
-    shape: { label: "Shape", icon: Shapes, color: "#1689a5", bg: "#e9f8fc" }
+    text: { label: "Text", icon: Type, color: "#1A4D2E", bg: "#E7F3EB" },
+    attribute: { label: "Dynamic field", icon: Braces, color: "#2F7D57", bg: "#E7F3EB" },
+    qr: { label: "QR code", icon: QrCode, color: "#11D452", bg: "#E7F3EB" },
+    image: { label: "Image", icon: Image, color: "#4C9A66", bg: "#F8FCF9" },
+    shape: { label: "Shape", icon: Shapes, color: "#1A4D2E", bg: "#E7F3EB" }
   };
 
   const info = types[element.type] || types.text;
   let name = element.text || info.label;
+  let preview = "";
 
   if (element.type === "qr") {
     name = element.qrMode === "automatic"
       ? "Verification QR"
       : "Custom QR code";
+    preview = element.qrMode === "automatic" ? "Automatic verification" : "Custom destination";
   } else if (element.type === "image") {
-    name = "Image element";
+    const sourceName = element.name || element.text || "";
+    if (/signature|sign here|signatory/i.test(sourceName)) {
+      name = sourceName && sourceName !== "Image" ? sourceName : "Signature";
+      info.label = "Signature";
+      info.icon = PenTool;
+    } else if (/logo/i.test(sourceName)) {
+      name = sourceName || "Logo";
+      info.label = "Logo";
+    } else {
+      name = sourceName || "Image";
+      info.label = "Image";
+    }
+    preview = `${Math.round(element.width || 0)} × ${Math.round(element.height || 0)} px`;
   } else if (element.type === "shape") {
     name = element.shape
       ? element.shape.charAt(0).toUpperCase() + element.shape.slice(1)
@@ -39,16 +53,19 @@ function getLayerInfo(element) {
       "{{verification_url}}": "Verification URL"
     };
     name = names[name] || name.replace(/[{}]/g, "").replaceAll("_", " ");
+    preview = element.text || "";
   }
+  if (element.type === "text") preview = element.text || "";
+  if (element.type === "shape") preview = `${element.shape || "Shape"} · ${Math.round(element.width || 0)} × ${Math.round(element.height || 0)} px`;
 
-  return { ...info, name };
+  return { ...info, name, preview };
 }
 
 export default function LayersPanel({
-  elements, selected, onSelect, onDelete, onMove, onVisibilityChange
+  elements, selected, onSelect, onDelete, onMove, onVisibilityChange, onLockChange,
+  background, backgroundImage
 }) {
   const [search, setSearch] = useState("");
-  const [hidden, setHidden] = useState([]);
 
   const ordered = [...elements].reverse();
   const filtered = ordered.filter(element => {
@@ -57,14 +74,12 @@ export default function LayersPanel({
       info.label.toLowerCase().includes(search.toLowerCase());
   });
 
-  const toggleVisibility = id => {
-    setHidden(previous => {
-      const next = previous.includes(id)
-        ? previous.filter(item => item !== id)
-        : [...previous, id];
-      onVisibilityChange?.(id, !next.includes(id));
-      return next;
-    });
+  const toggleVisibility = element => {
+    onVisibilityChange?.(element.id, !!element.hidden);
+  };
+
+  const toggleLock = element => {
+    onLockChange?.(element.id, !element.locked);
   };
 
   return (
@@ -83,6 +98,20 @@ export default function LayersPanel({
         <strong>{elements.length}</strong>
       </div>
 
+      <div className="cp-layer-canvas-row">
+        <span
+          className="cp-layer-canvas-thumbnail"
+          style={{
+            background: backgroundImage ? `url("${backgroundImage}") center/cover` : background || "#ffffff"
+          }}
+        />
+        <span className="cp-layer-name">
+          <strong>Canvas background</strong>
+          <small>{backgroundImage ? "Background image" : "Solid colour"}</small>
+        </span>
+        <span className="cp-layer-canvas-lock"><Lock size={12}/></span>
+      </div>
+
       <div className="cp-layers-search">
         <Search size={15}/>
         <input
@@ -98,17 +127,18 @@ export default function LayersPanel({
       </div>
 
       <div className="cp-layer-list">
-        {filtered.map((element, index) => {
+        {filtered.map(element => {
           const info = getLayerInfo(element);
           const Icon = info.icon;
           const isSelected = selected === element.id;
-          const isHidden = hidden.includes(element.id);
+          const isHidden = !!element.hidden;
+          const isLocked = !!element.locked;
           const actualIndex = ordered.findIndex(item => item.id === element.id);
 
           return (
             <div
               key={element.id}
-              className={`cp-layer-card ${isSelected ? "selected" : ""} ${isHidden ? "hidden" : ""}`}
+              className={`cp-layer-card ${isSelected ? "selected" : ""} ${isHidden ? "hidden" : ""} ${isLocked ? "locked" : ""}`}
             >
               <button
                 type="button"
@@ -116,22 +146,38 @@ export default function LayersPanel({
                 onClick={() => onSelect(element.id)}
                 title={`Select ${info.name}`}
               >
-                <span
-                  className="cp-layer-icon"
-                  style={{ color: info.color, background: info.bg }}
-                >
-                  <Icon size={16}/>
-                </span>
+                {element.type === "image" ? (
+                  <span className="cp-layer-icon cp-layer-thumbnail">
+                    <img src={element.src} alt=""/>
+                  </span>
+                ) : element.type === "shape" ? (
+                  <span
+                    className="cp-layer-icon cp-layer-shape-preview"
+                    style={{ color: element.stroke || info.color, background: element.fill && element.fill !== "transparent" ? element.fill : info.bg }}
+                  >
+                    <Shapes size={16}/>
+                  </span>
+                ) : (
+                  <span
+                    className="cp-layer-icon"
+                    style={{ color: info.color, background: info.bg }}
+                  >
+                    {element.type === "text" && element.text ? (
+                      <span className="cp-layer-text-preview" style={{color:element.color||info.color,fontSize:Math.min(14,Math.max(8,element.fontSize||11))}}>T</span>
+                    ) : <Icon size={16}/>}
+                  </span>
+                )}
                 <span className="cp-layer-name">
                   <strong>{info.name}</strong>
-                  <small>{info.label}</small>
+                  <small>{info.preview ? `${info.label} · ${info.preview}` : info.label}</small>
                 </span>
               </button>
 
               <div className="cp-layer-actions">
+                <span className="cp-layer-grip" title="Layer order"><GripVertical size={13}/></span>
                 <button
                   type="button"
-                  onClick={() => toggleVisibility(element.id)}
+                  onClick={() => toggleVisibility(element)}
                   title={isHidden ? "Show element" : "Hide element"}
                   className="cp-layer-action"
                 >
@@ -139,7 +185,15 @@ export default function LayersPanel({
                 </button>
                 <button
                   type="button"
-                  onClick={() => onMove(element.id, 1)}
+                  onClick={() => toggleLock(element)}
+                  title={isLocked ? "Unlock element" : "Lock element"}
+                  className={`cp-layer-action ${isLocked ? "active" : ""}`}
+                >
+                  {isLocked ? <Lock size={14}/> : <Unlock size={14}/>}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onMove(element.id, -1)}
                   disabled={actualIndex === 0}
                   title="Move layer up"
                   className="cp-layer-action"
@@ -148,7 +202,7 @@ export default function LayersPanel({
                 </button>
                 <button
                   type="button"
-                  onClick={() => onMove(element.id, -1)}
+                  onClick={() => onMove(element.id, 1)}
                   disabled={actualIndex === ordered.length - 1}
                   title="Move layer down"
                   className="cp-layer-action"
@@ -178,8 +232,8 @@ export default function LayersPanel({
       </div>
 
       <div className="cp-layers-footer">
-        <span>{hidden.length} hidden</span>
-        <span>{elements.length} total elements</span>
+        <span>{elements.filter(element => element.hidden).length} hidden</span>
+        <span>{elements.filter(element => element.locked).length} locked · {elements.length} total</span>
       </div>
     </div>
   );
