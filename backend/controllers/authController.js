@@ -139,6 +139,13 @@ const loginUser = async (req, res) => {
       });
     }
 
+    if (user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Administrator access required."
+      });
+    }
+
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
@@ -174,4 +181,75 @@ const getMe = async (req, res) => {
   });
 };
 
-module.exports = { registerUser, loginUser, getMe };
+
+const crypto = require("crypto");
+
+const setupAdmin = async (req, res) => {
+  try {
+    const setupKey = process.env.ADMIN_SETUP_KEY;
+    const suppliedKey = req.get("x-admin-setup-key") || "";
+
+    if (!setupKey || !suppliedKey ||
+        suppliedKey.length !== setupKey.length ||
+        !crypto.timingSafeEqual(Buffer.from(suppliedKey), Buffer.from(setupKey))) {
+      return res.status(403).json({
+        success: false,
+        message: "Invalid administrator setup authorization."
+      });
+    }
+
+    const oldEmail = "hasheermanegar@gmail.com";
+    const adminEmail = "admin@vistaravidyanidhi.org.in";
+
+    const existingAdmin = await User.findOne({
+      email: adminEmail,
+      role: "admin"
+    });
+
+    if (existingAdmin) {
+      return res.status(409).json({
+        success: false,
+        message: "Administrator setup is already complete."
+      });
+    }
+
+    const account = await User.findOne({ email: oldEmail });
+
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        message: "Existing account not found. No changes made."
+      });
+    }
+
+    const emailOwner = await User.findOne({ email: adminEmail });
+
+    if (emailOwner && !emailOwner._id.equals(account._id)) {
+      return res.status(409).json({
+        success: false,
+        message: "Administrator email already belongs to another account."
+      });
+    }
+
+    account.email = adminEmail;
+    account.role = "admin";
+    await account.save();
+
+    return res.json({
+      success: true,
+      message: "Administrator account successfully configured.",
+      user: {
+        email: account.email,
+        role: account.role
+      }
+    });
+  } catch (error) {
+    console.error("Admin setup error:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Administrator setup failed."
+    });
+  }
+};
+
+module.exports = { registerUser, loginUser, getMe, setupAdmin };

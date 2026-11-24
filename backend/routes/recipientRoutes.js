@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const { protect } = require("../middleware/authMiddleware");
+const { protect, adminOnly } = require("../middleware/authMiddleware");
 
 const {
   addRecipient,
@@ -11,7 +11,7 @@ const {
   deleteRecipient
 } = require("../controllers/recipientController");
 
-router.use(protect);
+router.use(protect, adminOnly);
 
 router.post("/bulk", bulkAddRecipients);
 router.post("/", addRecipient);

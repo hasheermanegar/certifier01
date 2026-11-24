@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const { protect } = require("../middleware/authMiddleware");
+const { protect, adminOnly } = require("../middleware/authMiddleware");
 
 const {
   issueCertificate,
@@ -15,7 +15,7 @@ const {
 
 router.get("/verify/:certificateId", verifyCertificate);
 
-router.use(protect);
+router.use(protect, adminOnly);
 
 router.post("/issue", issueCertificate);
 router.get("/", getIssuedCertificates);

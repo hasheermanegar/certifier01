@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const { protect } = require("../middleware/authMiddleware");
+const { protect, adminOnly } = require("../middleware/authMiddleware");
 
 const {
   createCertificate,
@@ -11,7 +11,7 @@ const {
   deleteCertificate
 } = require("../controllers/certificateController");
 
-router.use(protect);
+router.use(protect, adminOnly);
 
 router.post("/", createCertificate);
 router.get("/", getCertificates);

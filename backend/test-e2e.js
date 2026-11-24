@@ -49,7 +49,8 @@ async function main() {
     name: "CertifyPro E2E Test",
     email,
     password: await bcrypt.hash("Temporary-Test-Password-9284", 12),
-    organization: "Snapshot Test Organization"
+    organization: "Snapshot Test Organization",
+    role: "admin"
   });
 
   userId = user._id;
