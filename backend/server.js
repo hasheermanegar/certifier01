@@ -16,6 +16,7 @@ const app = express();
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   "https://certifier01-git-vercel-frontend-deploy-h-7104.vercel.app",
+  "https://vistaravidyanidhicertifications.vercel.app",
   ...(process.env.NODE_ENV === "production" ? [] : [
     "http://localhost:5173",
     "http://127.0.0.1:5173"
