@@ -1,7 +1,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const DEFAULT_SUPPORT_EMAIL = "hasheermanegar@gmail.com";
+const DEFAULT_SUPPORT_EMAIL = "director@vistaravidyanidhi.or.in";
 const EMAIL_IMAGE_PATHS = {
   "certificate-hero": path.join(__dirname, "../email-assets/credential-hero.png"),
   "linkedin-badge": path.join(__dirname, "../email-assets/linkedin-badge.png"),
