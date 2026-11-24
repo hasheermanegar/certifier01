@@ -5,11 +5,9 @@ const { protect } = require("../middleware/authMiddleware");
 
 const {
   loginUser,
-  getMe,
-  setupAdmin
+  getMe
 } = require("../controllers/authController");
 
-router.post("/setup-admin", setupAdmin);
 router.post("/login", loginUser);
 router.get("/me", protect, getMe);
 
