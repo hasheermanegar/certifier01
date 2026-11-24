@@ -244,3 +244,16 @@
     animation: none;
   }
 }
+
+/* Official Vistara verification branding */
+.cp-verification-brand {
+  gap: 10px;
+}
+
+.cp-verification-brand .vistara-verification-icon {
+  display: block;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
+}

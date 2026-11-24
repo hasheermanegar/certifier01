@@ -32,7 +32,7 @@ export default function AuthScreen({ onLogin }) {
     <main className="auth-screen">
       <section className="auth-brand-panel">
         <div className="auth-brand">
-          <span className="auth-wordmark">VistaraCertifications</span>
+          <span className="auth-wordmark"><img src="/vistara-flower.png" alt="" className="vistara-brand-icon" />VistaraCertification</span>
         </div>
         <div className="auth-brand-copy">
           <span className="auth-eyebrow">DIGITAL CREDENTIAL PLATFORM</span>
@@ -45,7 +45,7 @@ export default function AuthScreen({ onLogin }) {
       <section className="auth-form-panel">
         <div className="auth-form-wrap">
           <div className="auth-mobile-brand">
-            <span className="auth-wordmark">VistaraCertifications</span>
+            <span className="auth-wordmark"><img src="/vistara-flower.png" alt="" className="vistara-brand-icon" />VistaraCertification</span>
           </div>
 
           <span className="auth-eyebrow">ADMINISTRATOR ACCESS</span>

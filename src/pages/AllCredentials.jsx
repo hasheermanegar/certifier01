@@ -284,7 +284,7 @@ export default function AllCredentials({ credentials = [], onCreate, onUpdate, o
 
         <div className="cp-credential-table-footer">
           <span>Showing <strong>{rows.length}</strong> of <strong>{credentials.length}</strong> credentials</span>
-          <span>VistaraCertifications Credential Management</span>
+          <span>VistaraCertification Credential Management</span>
         </div>
       </section>
     </div>

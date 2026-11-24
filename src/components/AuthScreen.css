@@ -127,3 +127,18 @@
 .auth-mobile-brand .auth-wordmark {
   font-size: 21px;
 }
+
+/* Official Vistara emblem */
+.auth-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #1A4D2E;
+}
+
+.auth-wordmark .vistara-brand-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
+}

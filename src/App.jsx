@@ -213,7 +213,7 @@ const downloadIssuedCertificate=async credential=>{
     const url=URL.createObjectURL(blob);
     const link=document.createElement("a");
     link.href=url;
-    link.download=`VistaraCertifications-${credential.certificateId}.pdf`;
+    link.download=`VistaraCertification-${credential.certificateId}.pdf`;
     document.body.appendChild(link);
     link.click();
     link.remove();

@@ -48,7 +48,7 @@ export default function PublicCertificateVerification() {
     <main className="cp-verification-page">
       <section className={`cp-verification-card ${statusClass}`}>
         <header className="cp-verification-brand">
-          <span>VistaraCertifications</span>
+          <img src="/vistara-flower.png" alt="" className="vistara-verification-icon" /><span>VistaraCertification</span>
         </header>
         <div className="cp-verification-accent" aria-hidden="true"/>
         <div className="cp-verification-content">

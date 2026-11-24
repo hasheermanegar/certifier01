@@ -52,7 +52,8 @@ export default function Sidebar({ page, setPage, mobileOpen = false, onClose = (
     <aside id="primary-navigation" className={`sidebar ${mobileOpen ? "mobile-open" : ""} ${collapsed ? "is-collapsed" : ""}`}>
       <div className="sidebar-brand-row">
         <div className="brand">
-          <span className="brand-name">VistaraCertifications</span>
+          <img src="/vistara-flower.png" alt="Vistara" className="vistara-sidebar-icon" />
+          <span className="brand-name">VistaraCertification</span>
         </div>
         <button
           type="button"

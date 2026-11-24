@@ -48,7 +48,7 @@ export default function QRCodesPanel({ onAdd }) {
             <strong>Automatic verification QR</strong>
           </div>
           <p>
-            VistaraCertifications will generate a unique verification link for each
+            VistaraCertification will generate a unique verification link for each
             certificate when you issue credentials individually or in bulk.
           </p>
           <div className="cp-qr-token">

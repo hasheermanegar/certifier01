@@ -179,6 +179,10 @@ export default function EmailTemplates({ templates = [], onSave, onDelete }) {
               <button className="icon-btn" onClick={() => setPreview(null)}>×</button>
             </div>
             <div className="preview-email">
+              <div className="vistara-email-brand">
+                <img src="/vistara-flower.png" alt="" />
+                <span>VistaraCertification</span>
+              </div>
               <small>SUBJECT</small>
               <h3>{renderPreview(preview.subject)}</h3>
               <hr />
