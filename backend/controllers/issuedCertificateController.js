@@ -1,3 +1,5 @@
+const fontkit = require("@pdf-lib/fontkit");
+const { loadFontBytes } = require("../services/certificateFonts");
 const crypto = require("crypto");
 const QRCode = require("qrcode");
 const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
@@ -433,6 +435,11 @@ const downloadCertificatePDF = async (req, res) => {
 
     const pdfDoc = await PDFDocument.create();
 
+    pdfDoc.registerFontkit(fontkit);
+
+    const embeddedFonts = new Map();
+
+
     const width = Math.max(100, Number(design.width) || 1120);
     const height = Math.max(100, Number(design.height) || 790);
     const page = pdfDoc.addPage([width, height]);
@@ -610,13 +617,47 @@ const downloadCertificatePDF = async (req, res) => {
         const isBold = Boolean(element.bold);
         const isItalic = Boolean(element.italic);
 
-        const selectedFont = isBold && isItalic
+        let selectedFont = isBold && isItalic
           ? boldItalicFont
           : isBold
             ? boldFont
             : isItalic
               ? italicFont
               : standardFont;
+
+
+
+        if (element.fontFamily) {
+          try {
+            const result = await loadFontBytes(
+              element.fontFamily,
+              isBold,
+              isItalic
+            );
+
+            const key = `${result.family}:${result.variant}`;
+
+            if (!embeddedFonts.has(key)) {
+              embeddedFonts.set(key, await pdfDoc.embedFont(
+                result.bytes,
+                { subset: true }
+              ));
+            }
+
+            const customFont = embeddedFonts.get(key);
+
+            customFont.encodeText(text.replace(/[\r\n]/g, ""));
+
+            selectedFont = customFont;
+
+          } catch (error) {
+            console.warn(
+              "Using fallback certificate font:",
+              element.fontFamily,
+              error.message
+            );
+          }
+        }
 
         let displayText = text;
 
