@@ -3,46 +3,26 @@ import { api } from "../services/api";
 import "./AuthScreen.css";
 
 export default function AuthScreen({ onLogin }) {
-  const [mode, setMode] = useState("login");
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    organization: "",
-  });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-
-  const update = (event) => {
-    setForm((previous) => ({
-      ...previous,
-      [event.target.name]: event.target.value,
-    }));
-  };
 
   const submit = async (event) => {
     event.preventDefault();
     setBusy(true);
     setError("");
-    setNotice("");
 
     try {
-      if (mode === "register") {
-        await api.register(form);
-        setMode("login");
-        setForm((previous) => ({ ...previous, password: "" }));
-        setNotice("Your account has been created. Please log in.");
-      } else {
-        const result = await api.login({
-          email: form.email,
-          password: form.password,
-        });
-        if (!result.token) throw new Error("The server did not return a login token.");
-        onLogin(result.user);
+      const result = await api.login(form);
+
+      if (!result.token || result.user?.role !== "admin") {
+        api.logout();
+        throw new Error("Administrator access required.");
       }
+
+      onLogin(result.user);
     } catch (err) {
-      setError(err.message || "Something went wrong. Please try again.");
+      setError(err.message || "Unable to sign in. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -68,55 +48,45 @@ export default function AuthScreen({ onLogin }) {
             <span className="auth-wordmark">VistaraCertifications</span>
           </div>
 
-          <span className="auth-eyebrow">{mode === "login" ? "WELCOME BACK" : "GET STARTED"}</span>
-          <h2>{mode === "login" ? "Sign in to your workspace" : "Create your account"}</h2>
-          <p className="auth-subtitle">
-            {mode === "login"
-              ? "Enter your details to continue."
-              : "Set up your workspace to start creating certificates."}
-          </p>
+          <span className="auth-eyebrow">ADMINISTRATOR ACCESS</span>
+          <h2>Sign in to your workspace</h2>
+          <p className="auth-subtitle">Enter your administrator credentials to continue.</p>
 
           {error && <div className="auth-message auth-error" role="alert">{error}</div>}
-          {notice && <div className="auth-message auth-success" role="status">{notice}</div>}
 
           <form onSubmit={submit} className="auth-form">
-            {mode === "register" && (
-              <>
-                <label>
-                  Full name
-                  <input name="name" value={form.name} onChange={update} placeholder="Your full name" required maxLength={100} autoComplete="name" />
-                </label>
-                <label>
-                  Organization <span className="auth-optional">(optional)</span>
-                  <input name="organization" value={form.organization} onChange={update} placeholder="Your organization" autoComplete="organization" />
-                </label>
-              </>
-            )}
-
             <label>
-              Email address
-              <input name="email" type="email" value={form.email} onChange={update} placeholder="you@example.com" required autoComplete="email" />
+              Administrator email
+              <input
+                name="email"
+                type="email"
+                value={form.email}
+                onChange={(event) => setForm({ ...form, email: event.target.value })}
+                placeholder="admin@example.com"
+                required
+                autoComplete="username"
+              />
             </label>
 
             <label>
               Password
-              <input name="password" type="password" value={form.password} onChange={update} placeholder="At least 8 characters" required minLength={8} maxLength={128} autoComplete={mode === "login" ? "current-password" : "new-password"} />
+              <input
+                name="password"
+                type="password"
+                value={form.password}
+                onChange={(event) => setForm({ ...form, password: event.target.value })}
+                placeholder="Enter your password"
+                required
+                autoComplete="current-password"
+              />
             </label>
 
             <button className="auth-submit" type="submit" disabled={busy}>
-              {busy ? "Please wait..." : mode === "login" ? "Sign in" : "Create account"}
+              {busy ? "Please wait..." : "Sign in"}
             </button>
           </form>
 
-          <div className="auth-switch">
-            {mode === "login" ? (
-              <>Don't have an account? <button type="button" onClick={() => { setMode("register"); setError(""); setNotice(""); }}>Create account</button></>
-            ) : (
-              <>Already have an account? <button type="button" onClick={() => { setMode("login"); setError(""); setNotice(""); }}>Sign in</button></>
-            )}
-          </div>
-
-          <p className="auth-security">Secure access to your certificate workspace.</p>
+          <p className="auth-security">Restricted administrator access. Public registration is disabled.</p>
         </div>
       </section>
     </main>

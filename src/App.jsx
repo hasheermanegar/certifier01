@@ -53,7 +53,27 @@ const mergeCredentialRecipients=(previous,credentials)=>{
 };
 export default function App(){const[page,setPage]=useState("Dashboard"),[mobileNavOpen,setMobileNavOpen]=useState(false),[loading,setLoading]=useState(true),[authChecking,setAuthChecking]=useState(()=>Boolean(authStorage.getToken())),[user,setUser]=useState(null),[designs,setDesigns]=useState(read("cp-designs")),[credentials,setCredentials]=useState(read("cp-creds")),[recipients,setRecipients]=useState(()=>mergeCredentialRecipients(read("cp-recipients"),read("cp-creds"))),[pathways,setPathways]=useState(read("cp-pathways")),[emailTemplates,setEmailTemplates]=useState(read("cp-email-templates")),[forms,setForms]=useState(read("cp-forms")),[active,setActive]=useState(null),[modal,setModal]=useState(false);
 useEffect(()=>{let t=setTimeout(()=>setLoading(false),300);return()=>clearTimeout(t)},[]);
-useEffect(()=>{let active=true;const token=authStorage.getToken();if(!token)return;api.me().then(result=>{if(active)setUser(result.user);}).catch(()=>{authStorage.clearToken();if(active)setUser(null);}).finally(()=>{if(active)setAuthChecking(false);});return()=>{active=false;};},[]);
+useEffect(()=>{
+  let active=true;
+  const token=authStorage.getToken();
+  if(!token)return;
+
+  api.me().then(result=>{
+    if(result.user?.role !== "admin"){
+      authStorage.clearToken();
+      if(active)setUser(null);
+      return;
+    }
+    if(active)setUser(result.user);
+  }).catch(()=>{
+    authStorage.clearToken();
+    if(active)setUser(null);
+  }).finally(()=>{
+    if(active)setAuthChecking(false);
+  });
+
+  return()=>{active=false;};
+},[]);
 useEffect(()=>{
   if(!user)return;
   let cancelled=false;
@@ -248,7 +268,10 @@ const resendIssuedCertificate=async id=>{
 };
 if(window.location.pathname.startsWith("/verify/"))return <PublicCertificateVerification/>;
 if(loading||authChecking)return <LoadingScreen/>;
-if(!user)return <AuthScreen onLogin={setUser}/>;
+if(!user)return <AuthScreen onLogin={(loggedInUser)=>{
+  if(loggedInUser?.role==="admin")setUser(loggedInUser);
+  else{api.logout();setUser(null);}
+}}/>;
 return <div className="app-shell"><Sidebar page={page} setPage={setPage} mobileOpen={mobileNavOpen} onClose={()=>setMobileNavOpen(false)}/><main className="main-area"><Suspense fallback={<LoadingScreen/>}>{page!=="Designer"&&<Topbar title={page} onCreate={()=>setModal(true)} onHelp={()=>setPage("Help Center")} onMenu={()=>setMobileNavOpen(open=>!open)} mobileNavOpen={mobileNavOpen}/>}
 {page==="Dashboard"&&<Dashboard designs={designs} credentials={credentials} onDesign={createDesign} onIssue={()=>setModal(true)} setPage={setPage}/>}
 {page==="Design Templates"&&<DesignTemplates designs={designs} onCreate={createDesign} onOpen={openDesign} onDelete={deleteDesign} onUseTemplate={design=>{setActive(structuredClone(design));setPage("Designer");}}/>}

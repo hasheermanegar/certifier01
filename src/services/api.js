@@ -10,7 +10,6 @@ export const authStorage = {
 async function request(path, options = {}) {
   const token = authStorage.getToken();
   const isPublicRequest = path === "/auth/login" ||
-    path === "/auth/register" ||
     path.startsWith("/issued-certificates/verify/");
 
   const response = await fetch(`${API_BASE}${path}`, {
@@ -27,7 +26,7 @@ async function request(path, options = {}) {
   if (!response.ok) {
     const message = data.message || data.error || (
       response.status === 401 && path === "/auth/login"
-        ? "Email or password is incorrect. If you don't have an account, select Create account."
+        ? "Email or password is incorrect, or this account does not have administrator access."
         : `Request failed (${response.status})`
     );
     const error = new Error(message);
@@ -41,12 +40,6 @@ async function request(path, options = {}) {
 
 export const api = {
   health: () => request("/health"),
-
-  register: (details) =>
-    request("/auth/register", {
-      method: "POST",
-      body: JSON.stringify(details),
-    }),
 
   login: async (credentials) => {
     const data = await request("/auth/login", {
