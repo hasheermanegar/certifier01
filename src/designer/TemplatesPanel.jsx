@@ -1,3 +1,5 @@
+import { premiumCertificateCatalog } from "./templateCatalog/index.js";
+import { buildPremiumDesign } from "./templateCatalog/certificateBuilder.js";
 import { useRef, useState } from "react";
 import { ChevronRight, LayoutTemplate } from "lucide-react";
 import CertificateThumbnail from "./CertificateThumbnail";
@@ -76,9 +78,11 @@ const templatesByPalette = palettes.flatMap((palette, paletteIndex) =>
     name: `${template.name} · ${palette.name}`
   }))
 );
-const templates = Array.from({ length: templatesByPalette.length }, (_, index) =>
+const legacyTemplates = Array.from({ length: templatesByPalette.length }, (_, index) =>
   templatesByPalette[(index % palettes.length) * baseTemplates.length + (index % baseTemplates.length)]
 );
+
+const templates = [...premiumCertificateCatalog, ...legacyTemplates];
 
 const categories = ["All", "Certificates", "Badges", "Transcripts", "Training Records", "Assessments", "Letters"];
 
@@ -102,6 +106,9 @@ function readCustomTemplates() {
 }
 
 function Preview({ item, portrait = false }) {
+  if (item.premium) {
+    return <CertificateThumbnail design={buildPremiumDesign(item, portrait ? "portrait" : "landscape")} />;
+  }
   return (
     <div className={`template-preview ${portrait ? "portrait" : ""} ${item.custom ? "has-design-preview" : ""}`} data-layout={item.custom ? "custom" : String(((Number(item.id) || 1) - 1) % 10)}
       style={{
@@ -313,6 +320,7 @@ function buildDistinctTemplateElements(item, orientation) {
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function createTemplateDesign(item, orientation = "landscape") {
+  if (item.premium) return buildPremiumDesign(item, orientation);
   const portrait = orientation === "portrait";
   const whiteBackgroundTemplate = { ...item, bg: "#ffffff" };
   return {
@@ -338,6 +346,16 @@ export default function TemplatesPanel({ design, backgroundImage = "", onApply }
   const recentTemplates = templates.filter(template => recent.includes(template.id));
 
   const applyTemplate = (item, selectedOrientation = orientation) => {
+    if (item.premium) {
+      const premium = buildPremiumDesign(item, selectedOrientation);
+      onApply({ ...design, ...premium, id: design.id, backgroundImage: "" });
+      setOrientation(selectedOrientation);
+      setRecent(old => [item.id, ...old.filter(id => id !== item.id)].slice(0, 4));
+      setNotice(`${item.name} applied`);
+      setTimeout(() => setNotice(""), 2200);
+      return;
+    }
+
     const isCustom = !!item.custom;
     const itemOrientation = isCustom ? item.orientation || selectedOrientation : selectedOrientation;
     const portrait = itemOrientation === "portrait";

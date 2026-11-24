@@ -1,3 +1,5 @@
+import { loadDesignFonts } from "./fonts/fontLoader";
+import FontPicker from "./fonts/FontPicker";
 import {useEffect,useRef,useState} from "react";
 import {Rnd} from "react-rnd";
 import {QRCodeSVG} from "qrcode.react";
@@ -28,6 +30,19 @@ function templateElements(p, portrait) {
 }
 
 function ShapeElement({ element: e }) {
+  if (e.preciseShape && e.shape === "rectangle") {
+    const sw = e.strokeWidth ?? 0;
+    return <svg width="100%" height="100%" viewBox={`0 0 ${e.width} ${e.height}`} preserveAspectRatio="none" style={{display:"block",background:"transparent"}}>
+      <rect x={sw/2} y={sw/2}
+        width={Math.max(0,e.width-sw)}
+        height={Math.max(0,e.height-sw)}
+        fill={e.fill || "none"}
+        stroke={e.stroke || "none"}
+        strokeWidth={sw}
+        opacity={e.opacity ?? 1}/>
+    </svg>;
+  }
+
   const stroke = e.stroke || "#1A4D2E";
   const lineWidth = Math.max(1, e.strokeWidth || 3);
   const Icon = e.iconName && icons[e.iconName];
@@ -114,6 +129,13 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
   const [selected,S]=useState(null);
   const selectedRef=useRef(selected);
   useEffect(()=>{selectedRef.current=selected;},[selected]);
+
+  useEffect(() => {
+    loadDesignFonts(d.elements).catch(error => {
+      console.warn("Certificate font loading failed:", error);
+    });
+  }, [d.elements]);
+
   const [uploads,U]=useState([]);
   const [backgroundImage,setBackgroundImage]=useState(initial.backgroundImage || "");
   const backgroundInput=useRef(null);
@@ -475,6 +497,85 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
     if(field==="credentialId")setPreviewCredentialId(value);
   };
 
+  const createPreviewPDF=async()=>{
+    const source=previewStageRef.current?.querySelector(".certify-preview-canvas");
+    if(!source)throw new Error("Certificate preview unavailable");
+
+    const [{default:html2canvas},{jsPDF}]=await Promise.all([
+      import("html2canvas"),
+      import("jspdf")
+    ]);
+
+    await loadDesignFonts(d.elements);
+
+    const host=document.createElement("div");
+    Object.assign(host.style,{
+      position:"fixed",
+      left:"-100000px",
+      top:"0",
+      width:d.width+"px",
+      height:d.height+"px",
+      pointerEvents:"none"
+    });
+
+    const copy=source.cloneNode(true);
+    Object.assign(copy.style,{
+      transform:"none",
+      margin:"0",
+      boxShadow:"none",
+      border:"none",
+      width:d.width+"px",
+      height:d.height+"px"
+    });
+
+    host.appendChild(copy);
+    document.body.appendChild(host);
+
+    try{
+      await Promise.all(Array.from(copy.querySelectorAll("img")).map(img=>img.decode()));
+
+      const image=await html2canvas(copy,{
+        scale:3,
+        useCORS:true,
+        backgroundColor:null,
+        width:d.width,
+        height:d.height,
+        logging:false
+      });
+
+      const dimensions=d.pageSize==="A4"
+        ?(d.width>d.height?[297,210]:[210,297])
+        :d.pageSize==="US Letter"
+        ?(d.width>d.height?[279.4,215.9]:[215.9,279.4])
+        :[d.width*25.4/96,d.height*25.4/96];
+
+      const pdf=new jsPDF({
+        orientation:d.width>d.height?"landscape":"portrait",
+        unit:"mm",
+        format:dimensions,
+        compress:true
+      });
+
+      const w=pdf.internal.pageSize.getWidth();
+      const h=pdf.internal.pageSize.getHeight();
+
+      pdf.addImage(image.toDataURL("image/png"),"PNG",0,0,w,h);
+      return pdf;
+    }finally{
+      host.remove();
+    }
+  };
+
+  const downloadPreviewPDF=async()=>{
+    try{
+      const pdf=await createPreviewPDF();
+      pdf.save((d.name||"certificate")+".pdf");
+    }catch(error){
+      console.error(error);
+      window.alert("PDF export failed: "+error.message);
+    }
+  };
+
   const exportPDF=async()=>{
     try{
       const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
@@ -482,6 +583,7 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
         import("jspdf")
       ]);
       M("Preparing PDF…");
+      await loadDesignFonts(d.elements);
       const c=await html2canvas(canvas.current,{scale:2,backgroundColor:null});
       const pdf=new jsPDF({orientation:d.orientation,unit:"px",format:[d.width,d.height]});
       pdf.addImage(c.toDataURL("image/png"),"PNG",0,0,d.width,d.height);
@@ -560,14 +662,7 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
 
           {cur && (cur.type==="text" || cur.type==="attribute") && (
             <div className="cp-inline-toolbar" onMouseDown={e=>e.stopPropagation()}>
-              <select aria-label="Font family" value={cur.fontFamily||"Inter"} onChange={e=>patch(cur.id,{fontFamily:e.target.value})}>
-                <option value="Inter">Inter</option>
-                <option value="Arial">Arial</option>
-                <option value="Georgia">Georgia</option>
-                <option value="Times New Roman">Times New Roman</option>
-                <option value="Verdana">Verdana</option>
-                <option value="Courier New">Courier New</option>
-              </select>
+              <FontPicker value={cur.fontFamily || "Inter"} onChange={family=>patch(cur.id,{fontFamily:family})} />
               <input aria-label="Font size" type="number" min="6" max="150" value={cur.fontSize||24} onChange={e=>patch(cur.id,{fontSize:Math.max(6,Math.min(150,+e.target.value||6))})}/>
               <input aria-label="Text color" type="color" value={cur.color||"#26334d"} onChange={e=>patch(cur.id,{color:e.target.value})}/>
               <button type="button" className={cur.bold?"active":""} title="Bold" onClick={()=>patch(cur.id,{bold:!cur.bold})}><b>B</b></button>
@@ -583,7 +678,7 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
           <div className="cp-canvas-caption"><span>Page 1</span><span>Click an element to edit it · Drag to reposition</span></div>
           <div className="cp-canvas-scroll" ref={workspaceRef} onMouseDown={e=>{if(!e.target.closest(".react-rnd"))S(null)}}>
             <div className="cp-canvas-frame" style={{width:d.width*scale,height:d.height*scale}}>
-              <div ref={canvas} className="certificate-canvas cp-certificate-canvas" style={{width:d.width,height:d.height,background:d.background,backgroundImage:backgroundImage?`url("${backgroundImage}")`:undefined,backgroundSize:"100% 100%",backgroundPosition:"center",backgroundRepeat:"no-repeat",transform:"scale("+scale+")",transformOrigin:"top left"}}>
+              <div ref={canvas} className="certificate-canvas cp-certificate-canvas" style={{width:d.width,height:d.height,backgroundColor:d.background || "#ffffff",backgroundImage:backgroundImage?`url("${backgroundImage}")`:undefined,backgroundSize:"100% 100%",backgroundPosition:"center",backgroundRepeat:"no-repeat",transform:"scale("+scale+")",transformOrigin:"top left"}}>
                 {d.elements.filter(e=>!e.hidden).map(e=><Rnd key={e.id} bounds="parent" scale={scale} enableResizing={selected===e.id && !e.locked ? {
       top:true,
       right:true,
@@ -617,7 +712,7 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
                   <div
                     onClick={()=>S(e.id)}
                     data-certificate-text={e.text||""}
-                    style={{height:"100%",width:"100%",display:"flex",alignItems:"center",justifyContent:e.align==="left"?"flex-start":e.align==="right"?"flex-end":"center",fontSize:e.fontSize,fontFamily:e.fontFamily||"Inter",fontWeight:e.bold?700:400,fontStyle:e.italic?"italic":"normal",textDecoration:e.underline?"underline":"none",letterSpacing:(e.letterSpacing||0)+"px",lineHeight:e.lineHeight||1.2,textTransform:e.textTransform||"none",color:e.color,textAlign:e.align,overflow:"hidden",whiteSpace:"pre-wrap",padding:3}}
+                    style={{height:"100%",width:"100%",display:"flex",alignItems:"center",justifyContent:e.align==="left"?"flex-start":e.align==="right"?"flex-end":"center",fontSize:e.fontSize,fontFamily:e.fontFamily||"Inter",fontWeight:e.bold?700:400,fontStyle:e.italic?"italic":"normal",textDecoration:e.underline?"underline":"none",letterSpacing:(e.letterSpacing||0)+"px",lineHeight:e.lineHeight||1.2,textTransform:e.textTransform||"none",color:e.color,textAlign:e.align,overflow:"hidden",whiteSpace:"pre-wrap",padding:e.type==="shape"?0:3}}
                   >
                     {e.type==="qr"?<QRCodeSVG value={e.qrMode==="automatic"?`https://certifypro.in/verify/${encodeURIComponent(previewCredentialId||"PREVIEW-CREDENTIAL")}`:(e.text||"https://example.com")} size={Math.max(40,Math.min(e.width,e.height)-5)}/>:e.type==="image"?<img src={e.src} alt="" style={{width:"100%",height:"100%",objectFit:"contain"}}/>:e.type==="shape"?<ShapeElement element={e}/>:e.text}
                   </div>
@@ -728,9 +823,7 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
             <section className="cp-props-section">
               <div className="cp-props-section-title"><strong>Typography</strong></div>
               <label className="cp-props-field">Font family
-                <select value={cur.fontFamily || "Inter"} onChange={e=>patch(cur.id,{fontFamily:e.target.value})}>
-                  {["Inter","Roboto","Open Sans","Poppins","Manrope","Montserrat","Playfair Display","Cormorant Garamond","Merriweather","Georgia","Allura","Great Vibes","Dancing Script"].map(f=><option key={f}>{f}</option>)}
-                </select>
+                <FontPicker value={cur.fontFamily || "Inter"} onChange={family=>patch(cur.id,{fontFamily:family})} />
               </label>
               <div className="cp-props-grid">
                 <label>Font size<input type="number" min="8" max="120" value={cur.fontSize || 24} onChange={e=>patch(cur.id,{fontSize:+e.target.value})}/></label>
@@ -850,31 +943,32 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
           aria-describedby="certify-preview-description"
         >
           <div className="certify-preview-toolbar">
-            <div className="certify-preview-heading">
-              <span>CREDENTIAL PREVIEW</span>
-              <strong id="certify-preview-title">Preview your credential design</strong>
-              <small id="certify-preview-description">See how real data populates the dynamic attribute placeholders.</small>
+            <div className="vistara-preview-brand">
+              <img src="/vistara-flower.png" alt="Vistara emblem"/>
+              <span>VistaraCertification</span>
             </div>
             <div className="certify-preview-buttons">
-              <button type="button" className="certify-preview-print" onClick={()=>window.print()}>
-                <Printer size={15}/> Print / Save PDF
-              </button>
               <button
                 ref={previewCloseRef}
                 type="button"
-                className="certify-preview-close"
+                className="vistara-preview-back"
                 onClick={()=>setPreviewImage("")}
-                aria-label="Close preview"
-                title="Close preview"
               >
-                <X size={17}/>
+                Back to designer <X size={16}/>
               </button>
             </div>
+          </div>
+          <div className="vistara-preview-hero">
+            <span className="vistara-preview-kicker">Credential studio</span>
+            <h2 id="certify-preview-title">Preview your credential</h2>
+            <p id="certify-preview-description">
+              Review every detail before recognising an achievement.
+            </p>
           </div>
           <div className="certify-preview-workspace">
             <aside className="certify-preview-data">
               <div className="certify-preview-data-heading">
-                <strong>Preview data</strong>
+                <strong>Personalisation</strong>
                 <span>Sample values</span>
               </div>
               <label>
@@ -893,7 +987,12 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
                   placeholder="Certificate UUID"
                 />
               </label>
-              <div className="certify-preview-live-status"><span/> Preview updates automatically</div>
+              <div className="certify-preview-live-status"><span/> Live preview</div>
+              <div className="vistara-preview-actions">
+                <button type="button" className="certify-preview-print" onClick={downloadPreviewPDF}>
+                  Download PDF
+                </button>
+              </div>
               <p>Only preview values are changed. Your design attributes and canvas remain unchanged.</p>
             </aside>
             <div ref={previewStageRef} className="certify-preview-stage">
@@ -906,7 +1005,7 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
                   style={{
                     width:d.width,
                     height:d.height,
-                    background:d.background,
+                    backgroundColor:d.background || "#ffffff",
                     backgroundImage:backgroundImage?`url("${backgroundImage}")`:undefined,
                     backgroundSize:"100% 100%",
                     backgroundPosition:"center",
@@ -965,7 +1064,7 @@ export default function CertificateDesigner({design:initial,onSave,onClose}) {
             </div>
           </div>
           <footer className="certify-preview-footer">
-            <span>Preview at certificate proportions</span>
+            <span>Design preview · Not an issued credential</span>
             <span>{d.orientation==="portrait"?"Portrait":"Landscape"} · {d.width} × {d.height}</span>
           </footer>
         </section>

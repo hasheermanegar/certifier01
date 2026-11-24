@@ -8,6 +8,7 @@ export default function CredentialUsage({ credentials = [], designs = [] }) {
     const templates = designs.map(d => {
       const items = credentials.filter(c => c.templateId === d.id);
       return {
+        id: d.id,
         name: d.name,
         total: items.length,
         issued: items.filter(c => String(c.status || "").toLowerCase() === "issued").length
@@ -123,7 +124,7 @@ export default function CredentialUsage({ credentials = [], designs = [] }) {
               </tr></thead>
               <tbody>
                 {stats.templates.map(t => (
-                  <tr key={t.name}>
+                  <tr key={t.id}>
                     <td style={{ padding: 12 }}>{t.name}</td>
                     <td style={{ padding: 12 }}>{t.total}</td>
                     <td style={{ padding: 12 }}>{t.issued}</td>

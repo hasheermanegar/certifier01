@@ -1,3 +1,4 @@
+import FontPicker from "./fonts/FontPicker";
 import { useState } from "react";
 import {
   AlignCenter, AlignLeft, AlignRight, Bold, Italic, Type, Underline
@@ -171,9 +172,7 @@ export default function TextPanel({ onAdd }) {
         />
 
         <label className="cp-text-control-label" htmlFor="cp-text-font">Typeface</label>
-        <select id="cp-text-font" value={font} onChange={event => setFont(event.target.value)}>
-          {fonts.map(item => <option key={item} value={item}>{item}</option>)}
-        </select>
+        <FontPicker value={font} onChange={setFont} />
         <div className="cp-text-font-preview" style={{ fontFamily: font }}>
           Aa <span>{font} · {size}px</span>
         </div>

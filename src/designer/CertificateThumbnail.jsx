@@ -15,7 +15,6 @@ function ThumbnailShape({ element, index }) {
     );
   }
   const common = {
-    key: element.id || index,
     fill: fill || "transparent",
     stroke: stroke || "none",
     strokeWidth: strokeWidth || 0,
