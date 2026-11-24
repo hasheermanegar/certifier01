@@ -3,6 +3,7 @@ const path = require("node:path");
 
 const DEFAULT_SUPPORT_EMAIL = "director@vistaravidyanidhi.org.in";
 const EMAIL_IMAGE_PATHS = {
+  "vistara-flower": path.join(__dirname, "../email-assets/vistara-flower.png"),
   "certificate-hero": path.join(__dirname, "../email-assets/credential-hero.png"),
   "linkedin-badge": path.join(__dirname, "../email-assets/linkedin-badge.png"),
   "share-badge": path.join(__dirname, "../email-assets/share-badge.png"),
@@ -33,7 +34,7 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
   const footer = `Having trouble with your credential or want to unsubscribe from email list? Contact us at ${supportEmail}.`;
 
   const text = [
-    "VistaraCertifications",
+    "VistaraCertification",
     "",
     `Here is your credential ${name}!`,
     "",
@@ -53,7 +54,7 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Your VistaraCertifications credential is ready</title>
+    <title>Your VistaraCertification credential is ready</title>
   </head>
   <body style="width:100%;margin:0;padding:0;background-color:#f8fcf9;font-family:Arial,Helvetica,sans-serif;color:#0d1b12;-webkit-text-size-adjust:100%;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f8fcf9" style="width:100%;background-color:#f8fcf9;">
@@ -62,7 +63,7 @@ function buildCertificateEmail({ recipientName, verificationUrl }) {
           <table role="presentation" width="620" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:620px;background-color:#ffffff;border:1px solid #d1e6d9;border-radius:8px;overflow:hidden;">
             <tr>
               <td align="center" bgcolor="#ffffff" style="padding:10px 18px;background-color:#ffffff;">
-                <span style="color:#1a4d2e;font-size:22px;font-weight:800;letter-spacing:-.5px;">VistaraCertifications</span>
+                <img src="cid:vistara-flower" width="32" height="32" alt="" style="vertical-align:middle;margin-right:8px;border:0;"><span style="color:#1a4d2e;font-size:22px;font-weight:800;letter-spacing:-.5px;">VistaraCertification</span>
               </td>
             </tr>
             <tr>
@@ -165,7 +166,7 @@ const sendCertificateEmail = async ({
   const email = buildCertificateEmail({ recipientName, verificationUrl });
   const configuredFrom = safeHeader(process.env.MAIL_FROM);
   const senderAddress = configuredFrom.match(/<\s*([^<>]+)\s*>/)?.[1] || configuredFrom;
-  const from = `VistaraCertifications <${senderAddress.trim()}>`;
+  const from = `VistaraCertification <${senderAddress.trim()}>`;
   const recipient = safeHeader(to);
 
   if (!recipient || /[<>]/.test(recipient)) {
@@ -176,7 +177,7 @@ const sendCertificateEmail = async ({
   const relatedBoundary = `certifypro_related_${require("crypto").randomUUID()}`;
   const alternativeBoundary = `certifypro_alt_${require("crypto").randomUUID()}`;
 
-  const subject = encodeMimeHeader(`Your certificate: ${certificateTitle}`);
+  const subject = encodeMimeHeader(`VistaraCertification | Your certificate: ${certificateTitle}`);
   const filename = `${String(certificateId || "certificate").replace(/[^a-zA-Z0-9._-]/g, "_")}.pdf`;
   const inlineImages = Object.entries(EMAIL_IMAGE_PATHS).map(([cid, imagePath]) => ({
     cid,
